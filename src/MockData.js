@@ -4,12 +4,12 @@ import { subDays, format } from 'date-fns';
 
 // 杭州真实桥梁列表
 export const MOCK_BRIDGES = [
-    { id: 'BRG-001', name: '复兴大桥', type: '斜拉桥', length: 1376, lanes: 6, buildYear: 2003, coord: [120.1850, 30.2300], healthScore: 82 },
-    { id: 'BRG-002', name: '钱塘江大桥', type: '双层桥', length: 1453, lanes: 4, buildYear: 1937, coord: [120.1580, 30.2250], healthScore: 68 },
-    { id: 'BRG-003', name: '之江大桥', type: '拱桥', length: 1724, lanes: 6, buildYear: 2012, coord: [120.0980, 30.2020], healthScore: 91 },
-    { id: 'BRG-004', name: '西兴大桥', type: '斜拉桥', length: 1855, lanes: 8, buildYear: 2007, coord: [120.2150, 30.2180], healthScore: 76 },
-    { id: 'BRG-005', name: '九堡大桥', type: '连续梁桥', length: 1855, lanes: 6, buildYear: 2012, coord: [120.2780, 30.2650], healthScore: 88 },
-    { id: 'BRG-006', name: '庆春路过江隧道', type: '隧道', length: 4180, lanes: 4, buildYear: 2010, coord: [120.1980, 30.2400], healthScore: 93 },
+    { id: 'BRG-001', name: '复兴大桥', type: '斜拉桥', length: 1376, lanes: 6, buildYear: 2003, coord: [120.1850, 30.2300], healthScore: 82, sensors: { windSpeed: 4.5, stringTension: 1205, strain: 0.15, vibration: 0.8 } },
+    { id: 'BRG-002', name: '钱塘江大桥', type: '双层桥', length: 1453, lanes: 4, buildYear: 1937, coord: [120.1580, 30.2250], healthScore: 68, sensors: { windSpeed: 5.2, stringTension: null, strain: 0.22, vibration: 1.2 } },
+    { id: 'BRG-003', name: '之江大桥', type: '拱桥', length: 1724, lanes: 6, buildYear: 2012, coord: [120.0980, 30.2020], healthScore: 91, sensors: { windSpeed: 3.8, stringTension: null, strain: 0.08, vibration: 0.5 } },
+    { id: 'BRG-004', name: '西兴大桥', type: '斜拉桥', length: 1855, lanes: 8, buildYear: 2007, coord: [120.2150, 30.2180], healthScore: 76, sensors: { windSpeed: 6.1, stringTension: 1180, strain: 0.18, vibration: 0.9 } },
+    { id: 'BRG-005', name: '九堡大桥', type: '连续梁桥', length: 1855, lanes: 6, buildYear: 2012, coord: [120.2780, 30.2650], healthScore: 88, sensors: { windSpeed: 4.2, stringTension: null, strain: 0.11, vibration: 0.6 } },
+    { id: 'BRG-006', name: '庆春路过江隧道', type: '隧道', length: 4180, lanes: 4, buildYear: 2010, coord: [120.1980, 30.2400], healthScore: 93, sensors: { windSpeed: 0.5, stringTension: null, strain: 0.05, vibration: 0.3 } },
 ];
 
 // 桥梁结构部件
@@ -169,7 +169,10 @@ export const generateBridgeDiseases = () => {
                     typeObj.name === '剥落/掉块' ? '建议局部修补' :
                     typeObj.name === '钢筋裸露' ? '立即修复，防止结构性损伤' :
                     typeObj.name === '钢结构锈蚀' ? '除锈并涂刷防腐涂料' : '做好排水疏导，密封处理',
-            imageUrl: 'https://placehold.co/600x400/1a1a2e/06b6d4/png?text=Bridge+Defect',
+            imageUrl: typeObj.name === '混凝土裂缝' ? '/mock-bridges/image_01.jpg' :
+                      typeObj.name === '钢筋裸露' || typeObj.name === '剥落/掉块' ? '/mock-bridges/image_02.jpg' :
+                      typeObj.name === '钢结构锈蚀' ? '/mock-bridges/image_03.jpg' :
+                      '/mock-bridges/image_04.jpg',
         };
     });
 };
@@ -311,6 +314,62 @@ export const AI_BRIDGE_INSPECTION_DATA = {
                 },
             ]
         },
+        {
+            time: 31.0,
+            imageUrl: '/mock-bridges/image_07.jpg',
+            environment: { lighting: 'Good', weather: 'Clear', altitude: 40 },
+            diseases: [
+                {
+                    id: 'BRG-202603-007',
+                    type: '混凝土裂缝',
+                    severity: '中度',
+                    confidence: 0.92,
+                    component: '桥面板',
+                    mask_polygon: generatePolygonMask(0.65, 0.30, 0.08, 0.05, 8),
+                    bbox: [0.57, 0.25, 0.16, 0.10],
+                    quantification: { length_m: 1.5, max_width_mm: 3.2, depth_mm: 5 },
+                    advice: '定期观测，考虑表面封闭',
+                    location: '复兴大桥 南塔桥面 S5',
+                    coords: [120.1856, 30.2312],
+                    time: '14:30:15',
+                },
+                {
+                    id: 'BRG-202603-008',
+                    type: '泛碱/渗水',
+                    severity: '轻度',
+                    confidence: 0.89,
+                    component: '桥面板',
+                    mask_polygon: generatePolygonMask(0.70, 0.35, 0.12, 0.06, 7),
+                    bbox: [0.58, 0.29, 0.24, 0.12],
+                    quantification: { area_m2: 0.8, moisture_level: '轻微' },
+                    advice: '检查桥面排水孔是否堵塞',
+                    location: '复兴大桥 南塔桥面 S5',
+                    coords: [120.1857, 30.2313],
+                    time: '14:30:16',
+                }
+            ]
+        },
+        {
+            time: 36.5,
+            imageUrl: '/mock-bridges/image_08.jpg',
+            environment: { lighting: 'Shadow', weather: 'Cloudy', altitude: 22 },
+            diseases: [
+                {
+                    id: 'BRG-202603-009',
+                    type: '剥落/掉块',
+                    severity: '重度',
+                    confidence: 0.97,
+                    component: '桥面板',
+                    mask_polygon: generatePolygonMask(0.40, 0.70, 0.15, 0.12, 10),
+                    bbox: [0.25, 0.58, 0.30, 0.24],
+                    quantification: { area_m2: 1.5, depth_mm: 65 },
+                    advice: '大面积剥落，需紧急修补',
+                    location: '复兴大桥 4#桥墩 支座垫石上方',
+                    coords: [120.1843, 30.2288],
+                    time: '14:35:45',
+                }
+            ]
+        }
     ]
 };
 
@@ -386,4 +445,13 @@ export const MOCK_BRIDGE_WORK_ORDERS = [
         status: 'completed', priority: 'Low', assignedTo: '排水维护组',
         createTime: '2026-03-04 08:30', deadline: '2026-03-08'
     },
+];
+
+// ============ 巡检任务详情 (用于数字孪生) ============
+
+export const MOCK_TASKS = [
+    { id: 'TASK-001', vehicle: '天鹰01号', type: '全量结构巡检', area: '复兴大桥全段', status: 'executing', progress: 65, battery: 72, speed: 18, mileageToday: 42, temperature: 18, issues: 4, startTime: '14:00', position: [120.1860, 30.2305] },
+    { id: 'TASK-002', vehicle: '天鹰02号', type: '桥墩底部精细巡检', area: '钱塘江大桥 A2-B4', status: 'executing', progress: 82, battery: 58, speed: 12, mileageToday: 35, temperature: 19, issues: 6, startTime: '13:30', position: [120.1590, 30.2255] },
+    { id: 'TASK-003', vehicle: '天鹰03号', type: '应力传感器校准巡检', area: '之江大桥西侧', status: 'pending', progress: 0, battery: 100, speed: 0, mileageToday: 12, temperature: 20, issues: 0, startTime: '-', position: [120.2000, 30.2500] },
+    { id: 'TASK-004', vehicle: '天鹰04号', type: '路面裂缝自动识别任务', area: '西兴大桥', status: 'completed', progress: 100, battery: 25, speed: 45, mileageToday: 88, temperature: 22, issues: 3, startTime: '10:00', position: [120.2160, 30.2190] },
 ];

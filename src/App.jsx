@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   LayoutDashboard, Camera, AlertTriangle, Box, BarChart3, Map as MapIcon, Settings,
   Bell, User, Maximize, Search, RotateCcw, Filter, ChevronDown, ChevronRight, ChevronLeft, Menu, LogOut,
-  MoreHorizontal, Plane
+  MoreHorizontal, Plane, Activity
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell, PieChart, Pie
@@ -14,27 +14,39 @@ import CityMapView from './views/CityMapView';
 import WorkOrderView from './views/WorkOrderView';
 import DiseaseLedgerView from './views/DiseaseLedgerView';
 import AIInspectionCockpitView from './views/AIInspectionCockpitView';
+import InspectionTaskView from './views/InspectionTaskView';
+import AssetStatsView from './views/AssetStatsView';
+import DiseaseReviewView from './views/DiseaseReviewView';
+import DigitalCityView from './views/DigitalCityView';
+import RoadRoutesView from './views/RoadRoutesView';
+import AnalyticsView from './views/AnalyticsView';
 import { Card } from './components/UIComponents';
 
 // --- Sidebar & Navigation ---
 
 const MENU_ITEMS = [
-  { id: 'dashboard', label: '驾驶舱', icon: LayoutDashboard },
+  { id: 'dashboard', label: '控制中枢', icon: LayoutDashboard },
   {
     id: 'inspection', label: '无人机巡检', icon: Plane,
     children: [
       { id: 'ai-cockpit', label: 'AI检测工作台' },
-      { id: 'inspection-map', label: '巡检地图' },
+      { id: 'inspection-task', label: '航线调度系统' },
+      { id: 'bridge-network', label: '全息桥网总览' },
+      { id: 'inspection-map', label: '数字孪生地图' },
     ]
   },
   {
-    id: 'disease', label: '病害管理', icon: AlertTriangle,
+    id: 'disease', label: '病害及资产管理', icon: AlertTriangle,
     children: [
-      { id: 'disease-list', label: '病害台账' },
-      { id: 'work-orders', label: '维修工单' },
+      { id: 'bridge-assets', label: '桥梁资产台账' },
+      { id: 'disease-list', label: '结构体系台账' },
+      { id: 'disease-review', label: 'AI人工复核中心' },
+      { id: 'work-orders', label: '维修处置工单' },
     ]
   },
-  { id: 'settings', label: '系统设置', icon: Settings },
+  { id: 'health-stats', label: '健康评估大屏', icon: Activity },
+  { id: 'maintenance-analytics', label: '养护效能分析', icon: BarChart3 },
+  { id: 'settings', label: '系统网络设置', icon: Settings },
 ];
 
 const SidebarItem = ({ item, activeId, onNavigate, expandedItems, toggleExpand, isCollapsed, expandSidebar }) => {
@@ -371,46 +383,102 @@ const DashboardView = ({ onNavigate }) => {
         </Card>
       </div>
 
-      {/* Bottom Alert Section */}
-      <Card>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-slate-800 flex items-center">
-            <Bell size={20} className="mr-2 text-red-500" />
-            最新桥梁告警
+      {/* Bottom Alerts & Sensor Data Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-slate-800 flex items-center">
+              <Bell size={20} className="mr-2 text-red-500" />
+              最新桥梁告警
+            </h3>
+            <button className="text-cyan-500 text-sm hover:underline" onClick={() => onNavigate('disease-list')}>查看全部</button>
+          </div>
+          <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1">
+            {[
+              { id: 1, title: '复兴大桥 北塔桥面发现重度混凝土裂缝', time: '14:02:30', reporter: '天鹰01号 (UAV-001)', type: 'AI自动识别', level: '严重', status: '待处理' },
+              { id: 2, title: '钱塘江大桥 2#桥墩发现钢筋裸露', time: '13:45:12', reporter: '天鹰02号 (UAV-002)', type: 'AI自动识别', level: '紧急', status: '待处理' },
+              { id: 3, title: '西兴大桥 拉索区域检测到钢结构锈蚀', time: '11:30:00', reporter: '天鹰04号 (UAV-004)', type: 'AI自动识别', level: '一般', status: '已上报' }
+            ].map(alert => (
+              <div key={alert.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 hover:border-cyan-200 transition-all cursor-pointer group shadow-sm"
+                onClick={() => onNavigate('disease-list')}>
+                <div className="flex items-center space-x-3">
+                  <div className={clsx("p-2 rounded-lg transition-colors",
+                    alert.level === '严重' || alert.level === '紧急' ? "bg-red-100 text-red-600 group-hover:bg-red-200" : "bg-orange-100 text-orange-600 group-hover:bg-orange-200")}>
+                    <AlertTriangle size={18} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-slate-800">{alert.title}</div>
+                    <div className="text-xs text-slate-500 flex items-center mt-0.5"><Clock size={12} className="mr-1" /> 2026-03-08 {alert.time}</div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div className="text-right hidden sm:block">
+                    <div className="text-xs font-semibold text-slate-700">{alert.type}</div>
+                    <div className="text-xs text-slate-500">{alert.reporter}</div>
+                  </div>
+                  <span className={clsx("text-xs px-2 py-1 rounded border",
+                    alert.status === '待处理' ? "bg-red-100 text-red-600 border-red-200" : "bg-orange-100 text-orange-600 border-orange-200")}>{alert.status}</span>
+                  <ChevronRight size={16} className="text-slate-300 group-hover:text-cyan-500 transition-colors" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Structural Health Monitoring Component */}
+        <Card className="flex flex-col">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
+            <Activity size={20} className="mr-2 text-green-500" />
+            结构健康实时传感
           </h3>
-          <button className="text-cyan-500 text-sm hover:underline" onClick={() => onNavigate('disease-list')}>查看全部</button>
-        </div>
-        <div className="space-y-3">
-          {[
-            { id: 1, title: '复兴大桥 北塔桥面发现重度混凝土裂缝', time: '14:02:30', reporter: '天鹰01号 (UAV-001)', type: 'AI自动识别', level: '严重', status: '待处理' },
-            { id: 2, title: '钱塘江大桥 2#桥墩发现钢筋裸露', time: '13:45:12', reporter: '天鹰02号 (UAV-002)', type: 'AI自动识别', level: '紧急', status: '待处理' },
-            { id: 3, title: '西兴大桥 拉索区域检测到钢结构锈蚀', time: '11:30:00', reporter: '天鹰04号 (UAV-004)', type: 'AI自动识别', level: '一般', status: '已上报' }
-          ].map(alert => (
-            <div key={alert.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition-colors cursor-pointer group"
-              onClick={() => onNavigate('disease-list')}>
-              <div className="flex items-center space-x-3">
-                <div className={clsx("p-2 rounded-lg transition-colors",
-                  alert.level === '严重' || alert.level === '紧急' ? "bg-red-100 text-red-600 group-hover:bg-red-200" : "bg-orange-100 text-orange-600 group-hover:bg-orange-200")}>
-                  <AlertTriangle size={18} />
+          <div className="flex-1 flex flex-col justify-between space-y-3">
+            <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200 shadow-sm relative overflow-hidden">
+                <div className="absolute right-0 top-0 pt-2 pr-2 opacity-10"><Activity size={40} /></div>
+                <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">复兴大桥 - 阵风风速</span>
+                    <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">正常</span>
                 </div>
-                <div>
-                  <div className="text-sm font-bold text-slate-800">{alert.title}</div>
-                  <div className="text-xs text-slate-500 flex items-center"><Clock size={12} className="mr-1" /> 2026-03-08 {alert.time}</div>
+                <div className="flex items-end mb-2">
+                    <span className="text-2xl font-extrabold text-slate-800 font-mono">4.5</span>
+                    <span className="text-xs text-slate-500 ml-1 mb-1 font-medium">m/s</span>
                 </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="text-right hidden sm:block">
-                  <div className="text-xs font-semibold text-slate-700">{alert.type}</div>
-                  <div className="text-xs text-slate-500">{alert.reporter}</div>
+                <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-green-500 rounded-full" style={{ width: '30%' }}></div>
                 </div>
-                <span className={clsx("text-xs px-2 py-1 rounded border",
-                  alert.status === '待处理' ? "bg-red-100 text-red-600 border-red-200" : "bg-orange-100 text-orange-600 border-orange-200")}>{alert.status}</span>
-                <ChevronRight size={16} className="text-slate-300 group-hover:text-slate-500" />
-              </div>
             </div>
-          ))}
-        </div>
-      </Card>
+            
+            <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200 shadow-sm relative overflow-hidden">
+                <div className="absolute right-0 top-0 pt-2 pr-2 opacity-10"><Activity size={40} /></div>
+                <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">主跨中段 - 应变力</span>
+                    <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-bold">波动</span>
+                </div>
+                <div className="flex items-end mb-2">
+                    <span className="text-2xl font-extrabold text-slate-800 font-mono">0.15</span>
+                    <span className="text-xs text-slate-500 ml-1 mb-1 font-medium">με</span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-orange-500 rounded-full" style={{ width: '65%' }}></div>
+                </div>
+            </div>
+
+            <div className="p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200 shadow-sm relative overflow-hidden">
+                <div className="absolute right-0 top-0 pt-2 pr-2 opacity-10"><Activity size={40} /></div>
+                <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">北塔 S12 - 索力偏差</span>
+                    <span className="text-[10px] bg-cyan-100 text-cyan-700 px-1.5 py-0.5 rounded font-bold">极佳</span>
+                </div>
+                <div className="flex items-end mb-2">
+                    <span className="text-2xl font-extrabold text-slate-800 font-mono">+1.2</span>
+                    <span className="text-xs text-slate-500 ml-1 mb-1 font-medium">%</span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-cyan-500 rounded-full" style={{ width: '25%' }}></div>
+                </div>
+            </div>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };
@@ -437,8 +505,17 @@ function App() {
       case 'dashboard': return <DashboardView onNavigate={navigateTo} />;
       case 'inspection-map': return <CityMapView defaultMode="inspection" onNavigate={navigateTo} />;
       case 'ai-cockpit': return <AIInspectionCockpitView onNavigate={navigateTo} />;
+      case 'inspection-task': return <InspectionTaskView onNavigate={navigateTo} />;
       case 'disease-list': return <DiseaseLedgerView onNavigate={navigateTo} />;
-      case 'work-orders': return <WorkOrderView initialTarget={routeState.params.initialTarget} sourceType={routeState.params.sourceType} />;
+      case 'disease-review': return <DiseaseReviewView onNavigate={navigateTo} />;
+      case 'bridge-network': return <DigitalCityView onNavigate={navigateTo} />;
+      case 'bridge-assets': return <RoadRoutesView onNavigate={navigateTo} />;
+      case 'maintenance-analytics': return <AnalyticsView onNavigate={navigateTo} />;
+      case 'work-orders': {
+          const target = routeState.params?.initialTarget || routeState.params?.initialDisease;
+          return <WorkOrderView initialTarget={target} sourceType={routeState.params?.sourceType || 'disease'} />;
+      }
+      case 'health-stats': return <AssetStatsView onNavigate={navigateTo} />;
       default: return <DashboardView onNavigate={navigateTo} />;
     }
   };

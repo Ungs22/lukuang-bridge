@@ -43,6 +43,9 @@ const loadAMap = () => {
         version: '2.0',
         plugins: ['AMap.LineSearch', 'AMap.Driving', 'AMap.MoveAnimation', 'AMap.ControlBar', 'AMap.Scale', 'AMap.ToolBar'],
         Loca: { version: '2.0.0' }
+    }).catch(err => {
+        amapLoadPromise = null; // 加载失败时允许重试
+        throw err;
     });
 
     return amapLoadPromise;
@@ -56,15 +59,15 @@ const DigitalCityView = ({ onNavigate }) => {
     const labelLayerRef = useRef(null);
     const vehicleMarkersRef = useRef([]);
     const allLabelDataRef = useRef([]); // 用于存储最新的标签数据引用
-    const [loading, setLoading] = useState(true);
-    const [roadPaths, setRoadPaths] = useState(INITIAL_ROAD_PATHS);
+    const [roadPaths, setRoadPaths] = useState([]); // 初始为空，由 useEffect 加载
     const [visibleLabels, setVisibleLabels] = useState([]); // 当前视野内的标签
     const [currentZoom, setCurrentZoom] = useState(13.5); // 当前缩放级别
     const [selectedVehicle, setSelectedVehicle] = useState(null); // 选中的车辆详情
 
-    // 预处理所有道路的标签数据（包含中点坐标）
+    // 预处理所有道路的标签数据 (移至独立 useEffect 处理大数据)
     const allLabelData = useMemo(() => {
-        const data = roadPaths.map(road => {
+        if (!roadPaths || roadPaths.length === 0) return [];
+        return roadPaths.map(road => {
             if (!road.path || road.path.length < 2) return null;
             const midIndex = Math.floor(road.path.length / 2);
             const midPoint = road.path[midIndex];
@@ -77,9 +80,20 @@ const DigitalCityView = ({ onNavigate }) => {
                 color: getHealthColor(road.health)
             };
         }).filter(Boolean);
-        allLabelDataRef.current = data; // 同步更新 ref
-        return data;
     }, [roadPaths]);
+
+    // 同步 allLabelDataRef
+    useEffect(() => {
+        allLabelDataRef.current = allLabelData;
+    }, [allLabelData]);
+
+    // 延迟加载大数据文件，避免初次渲染阻塞
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setRoadPaths(INITIAL_ROAD_PATHS);
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     // 过滤视野范围内的标签 - 只在达到缩放阈值时过滤
     const filterLabelsInBounds = useCallback((map, zoom) => {
@@ -160,33 +174,36 @@ const DigitalCityView = ({ onNavigate }) => {
                 mapInstanceRef.current = localMapInstance;
 
                 // Initialize Loca (仅用于道路线)
-                if (window.Loca) {
+                if (window.Loca && window.Loca.Container) {
                     try {
                         localLocaInstance = new window.Loca.Container({ map: localMapInstance });
                         locaRef.current = localLocaInstance;
 
                         // 空数据源，防止 Loca 渲染时读取 undefined
-                        const emptySource = new window.Loca.GeoJSONSource({
-                            data: { type: 'FeatureCollection', features: [] }
-                        });
+                        if (window.Loca.GeoJSONSource) {
+                            const emptySource = new window.Loca.GeoJSONSource({
+                                data: { type: 'FeatureCollection', features: [] }
+                            });
 
-                        // Initialize Line Layer (Roads) - 仍使用 Loca
-                        const lineLayer = new window.Loca.LineLayer({
-                            loca: localLocaInstance,
-                            zIndex: 10,
-                            opacity: 1,
-                            visible: true,
-                            zooms: [10, 22],
-                        });
-                        lineLayer.setSource(emptySource);
-                        lineLayerRef.current = lineLayer;
-
-                        console.log(`[DigitalCity #${initId}] Loca 道路层初始化完成`);
+                            // Initialize Line Layer (Roads) - 仍使用 Loca
+                            if (window.Loca.LineLayer) {
+                                const lineLayer = new window.Loca.LineLayer({
+                                    loca: localLocaInstance,
+                                    zIndex: 10,
+                                    opacity: 1,
+                                    visible: true,
+                                    zooms: [10, 22],
+                                });
+                                lineLayer.setSource(emptySource);
+                                lineLayerRef.current = lineLayer;
+                                console.log(`[DigitalCity #${initId}] Loca 道路层初始化完成`);
+                            }
+                        }
                     } catch (e) {
                         console.error(`[DigitalCity #${initId}] Loca 初始化失败:`, e);
                     }
                 } else {
-                    console.warn(`[DigitalCity #${initId}] Loca 库未加载`);
+                    console.warn(`[DigitalCity #${initId}] Loca 库或 Container 未加载`);
                 }
 
                 // 使用 AMap 原生 LabelsLayer（支持 zooms 自动控制显示）
@@ -424,7 +441,7 @@ const DigitalCityView = ({ onNavigate }) => {
             <div className="absolute top-6 right-6 z-10 flex flex-col gap-2">
                 <div className="bg-slate-900/80 backdrop-blur border border-slate-700 p-4 rounded-xl shadow-2xl">
                     <h3 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider flex items-center">
-                        <Activity size={12} className="mr-2" /> 道路健康指数 (RQI)
+                        <Activity size={12} className="mr-2" /> 桥梁健康指数 (BHI)
                     </h3>
                     <div className="space-y-2">
                         {Object.entries(HEALTH_LEVELS).map(([key, config]) => (
@@ -440,7 +457,7 @@ const DigitalCityView = ({ onNavigate }) => {
                 {/* Road Status Distribution */}
                 <div className="bg-slate-900/80 backdrop-blur border border-slate-700 p-4 rounded-xl shadow-2xl">
                     <h3 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider flex items-center">
-                        <Layers size={12} className="mr-2" /> 路段状态分布
+                        <Layers size={12} className="mr-2" /> 结构健康状态分布
                     </h3>
                     <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs">
@@ -487,10 +504,10 @@ const DigitalCityView = ({ onNavigate }) => {
             <div className="absolute bottom-6 left-6 right-6 z-10 flex justify-center pointer-events-none">
                 <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700/50 px-6 py-4 rounded-2xl shadow-2xl pointer-events-auto flex items-center gap-8">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400"><Truck size={24} /></div>
+                        <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400"><Plane size={24} /></div>
                         <div>
                             <div className="text-xl font-bold text-white font-mono">{MOCK_TASKS.length}</div>
-                            <div className="text-xs text-slate-400">在线巡检车</div>
+                            <div className="text-xs text-slate-400">在线无人机</div>
                         </div>
                     </div>
                     <div className="w-px h-8 bg-slate-700"></div>
@@ -498,7 +515,7 @@ const DigitalCityView = ({ onNavigate }) => {
                         <div className="p-3 bg-green-500/20 rounded-xl text-green-400"><Navigation size={24} /></div>
                         <div>
                             <div className="text-xl font-bold text-white font-mono">{roadPaths.reduce((acc, r) => acc + (r.path?.length * 0.05), 0).toFixed(1)} km</div>
-                            <div className="text-xs text-slate-400">已覆盖路网</div>
+                            <div className="text-xs text-slate-400">已巡检全域</div>
                         </div>
                     </div>
                     <div className="w-px h-8 bg-slate-700"></div>
@@ -506,7 +523,7 @@ const DigitalCityView = ({ onNavigate }) => {
                         <div className="p-3 bg-purple-500/20 rounded-xl text-purple-400"><Download size={24} /></div>
                         <div>
                             <div className="text-xl font-bold text-white font-mono">{roadPaths.length}</div>
-                            <div className="text-xs text-slate-400">已覆盖路段</div>
+                            <div className="text-xs text-slate-400">覆盖结构段</div>
                         </div>
                     </div>
                 </div>
@@ -520,11 +537,11 @@ const DigitalCityView = ({ onNavigate }) => {
                         <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-4 flex justify-between items-center">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-white/20 rounded-lg">
-                                    <Truck size={24} className="text-white" />
+                                    <Plane size={24} className="text-white" />
                                 </div>
                                 <div>
                                     <div className="text-lg font-bold text-white">{selectedVehicle.vehicle}</div>
-                                    <div className="text-xs text-blue-100">{selectedVehicle.vehicleType}</div>
+                                    <div className="text-xs text-blue-100">巡检无人机</div>
                                 </div>
                             </div>
                             <button onClick={() => setSelectedVehicle(null)} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors">
@@ -577,7 +594,7 @@ const DigitalCityView = ({ onNavigate }) => {
                                 <div className="bg-slate-800/50 rounded-xl p-3 border border-slate-700">
                                     <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
                                         <Gauge size={12} className="text-blue-400" />
-                                        当前速度
+                                        空速
                                     </div>
                                     <div className="text-xl font-bold font-mono text-white">
                                         {selectedVehicle.speed} <span className="text-sm text-slate-400">km/h</span>
@@ -586,7 +603,7 @@ const DigitalCityView = ({ onNavigate }) => {
                                 <div className="bg-slate-800/50 rounded-xl p-3 border border-slate-700">
                                     <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
                                         <Navigation size={12} className="text-purple-400" />
-                                        今日里程
+                                        巡航里程
                                     </div>
                                     <div className="text-xl font-bold font-mono text-white">
                                         {selectedVehicle.mileageToday} <span className="text-sm text-slate-400">km</span>

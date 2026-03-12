@@ -10,62 +10,55 @@ import {
 import { Card } from '../components/UIComponents';
 import clsx from 'clsx';
 
-// Mock Data for Routes
+// Mock Data for Bridges
 const MOCK_ROUTES = [
-    { id: 1, name: '文一西路', code: 'R001', length: '12.5km', start: '紫金港立交', end: '绿汀路', health: 88, risk: 'Medium', type: 'Urban', maintenanceStatus: 'Normal' },
-    { id: 2, name: '莫干山路', code: 'R002', length: '18.2km', start: '天目山路', end: '绕城高速', health: 76, risk: 'High', type: 'Arterial', maintenanceStatus: 'Urgent' },
-    { id: 3, name: '天目山路', code: 'R003', length: '15.0km', start: '环城北路', end: '闲林', health: 92, risk: 'Low', type: 'Expressway', maintenanceStatus: 'Normal' },
-    { id: 4, name: '余杭塘路', code: 'R004', length: '10.8km', start: '莫干山路', end: '五常大道', health: 85, risk: 'Low', type: 'Urban', maintenanceStatus: 'Normal' },
-    { id: 5, name: '古墩路', code: 'R005', length: '14.3km', start: '天目山路', end: '金家渡', health: 82, risk: 'Medium', type: 'Arterial', maintenanceStatus: 'Pending' },
-    { id: 6, name: '教工路', code: 'R006', length: '5.2km', start: '天目山路', end: '余杭塘路', health: 90, risk: 'Low', type: 'Urban', maintenanceStatus: 'Normal' },
-    { id: 7, name: '文二路', code: 'R007', length: '8.4km', start: '莫干山路', end: '古墩路', health: 78, risk: 'Medium', type: 'Urban', maintenanceStatus: 'Routine' },
-    { id: 8, name: '文三路', code: 'R008', length: '8.1km', start: '莫干山路', end: '古墩路', health: 89, risk: 'Low', type: 'Urban', maintenanceStatus: 'Normal' },
-    { id: 9, name: '学院路', code: 'R009', length: '6.5km', start: '天目山路', end: '余杭塘路', health: 84, risk: 'Low', type: 'Urban', maintenanceStatus: 'Normal' },
-    { id: 10, name: '体育场路', code: 'R010', length: '7.8km', start: '环城西路', end: '环城东路', health: 75, risk: 'High', type: 'Arterial', maintenanceStatus: 'Urgent' },
-    { id: 11, name: '延安路', code: 'R011', length: '3.2km', start: '凤起路', end: '西湖大道', health: 93, risk: 'Low', type: 'Commercial', maintenanceStatus: 'Normal' },
-    { id: 12, name: '庆春路', code: 'R012', length: '4.5km', start: '环城西路', end: '秋涛北路', health: 81, risk: 'Medium', type: 'Arterial', maintenanceStatus: 'Pending' },
-    { id: 13, name: '凤起路', code: 'R013', length: '4.8km', start: '保俶路', end: '新塘路', health: 87, risk: 'Low', type: 'Arterial', maintenanceStatus: 'Normal' },
-    { id: 14, name: '之江路', code: 'R014', length: '22.5km', start: '复兴路', end: '之浦路', health: 86, risk: 'Medium', type: 'Expressway', maintenanceStatus: 'Routine' },
-    { id: 15, name: '留石高架', code: 'R015', length: '35.0km', start: '绕城西线', end: '绕城东线', health: 91, risk: 'Low', type: 'Expressway', maintenanceStatus: 'Normal' },
-    { id: 16, name: '紫金港路', code: 'R016', length: '12.0km', start: '天目山路', end: '石祥路', health: 79, risk: 'Medium', type: 'Arterial', maintenanceStatus: 'Routine' },
-    { id: 17, name: '石祥路', code: 'R017', length: '15.5km', start: '莫干山路', end: '杭行路', health: 72, risk: 'High', type: 'Arterial', maintenanceStatus: 'Urgent' },
+    { id: 1, name: '复兴大桥', code: 'B001', length: '12.5km', start: '滨江区', end: '上城区', health: 88, risk: 'Medium', type: '悬索桥', maintenanceStatus: 'Normal' },
+    { id: 2, name: '西兴大桥', code: 'B002', length: '18.2km', start: '萧山区', end: '上城区', health: 76, risk: 'High', type: '斜拉桥', maintenanceStatus: 'Urgent' },
+    { id: 3, name: '彭埠大桥', code: 'B003', length: '15.0km', start: '萧山区', end: '上城区', health: 92, risk: 'Low', type: '梁式桥', maintenanceStatus: 'Normal' },
+    { id: 4, name: '九堡大桥', code: 'B004', length: '10.8km', start: '萧山区', end: '上城区', health: 85, risk: 'Low', type: '组合体系桥', maintenanceStatus: 'Normal' },
+    { id: 5, name: '下沙大桥', code: 'B005', length: '14.3km', start: '萧山区', end: '钱塘区', health: 82, risk: 'Medium', type: '斜拉桥', maintenanceStatus: 'Pending' },
+    { id: 6, name: '江东大桥', code: 'B006', length: '5.2km', start: '萧山区', end: '钱塘区', health: 90, risk: 'Low', type: '悬索桥', maintenanceStatus: 'Normal' },
+    { id: 7, name: '钱江八桥', code: 'B007', length: '8.4km', start: '滨江区', end: '上城区', health: 78, risk: 'Medium', type: '连拱桥', maintenanceStatus: 'Routine' },
+    { id: 8, name: '望江路跨线桥', code: 'B008', length: '8.1km', start: '上城区', end: '滨江区', health: 89, risk: 'Low', type: '高架桥', maintenanceStatus: 'Normal' },
+    { id: 9, name: '中河高架 (主线)', code: 'B009', length: '6.5km', start: '复兴立交', end: '中河立交', health: 84, risk: 'Low', type: '高架桥', maintenanceStatus: 'Normal' },
+    { id: 10, name: '秋石高架 (主线)', code: 'B010', length: '7.8km', start: '石塘立交', end: '复兴立交', health: 75, risk: 'High', type: '高架桥', maintenanceStatus: 'Urgent' },
 ];
 
 const MOCK_SEGMENTS = [
-    { id: 101, roadId: 1, name: 'K0+000 - K2+000', health: 95, pci: 96, rqi: 94, issues: 0 },
-    { id: 102, roadId: 1, name: 'K2+000 - K4+000', health: 82, pci: 85, rqi: 78, issues: 3 },
-    { id: 103, roadId: 1, name: 'K4+000 - K6+000', health: 88, pci: 90, rqi: 86, issues: 1 },
-    { id: 104, roadId: 1, name: 'K6+000 - K8+000', health: 75, pci: 78, rqi: 72, issues: 5 }, // Poor
-    { id: 105, roadId: 1, name: 'K8+000 - K10+000', health: 92, pci: 94, rqi: 90, issues: 0 },
-    { id: 106, roadId: 1, name: 'K10+000 - K12+500', health: 89, pci: 91, rqi: 88, issues: 1 },
+    { id: 101, roadId: 1, name: '主跨 (段1)', health: 95, pci: 96, rqi: 94, issues: 0 },
+    { id: 102, roadId: 1, name: '主跨 (段2)', health: 82, pci: 85, rqi: 78, issues: 3 },
+    { id: 103, roadId: 1, name: '北引桥', health: 88, pci: 90, rqi: 86, issues: 1 },
+    { id: 104, roadId: 1, name: '南引桥', health: 75, pci: 78, rqi: 72, issues: 5 }, // Poor
+    { id: 105, roadId: 1, name: '匝道A', health: 92, pci: 94, rqi: 90, issues: 0 },
+    { id: 106, roadId: 1, name: '匝道B', health: 89, pci: 91, rqi: 88, issues: 1 },
 
-    // 莫干山路 (High Risk)
-    { id: 201, roadId: 2, name: 'K0+000 - K3+000', health: 72, pci: 75, rqi: 68, issues: 8 },
-    { id: 202, roadId: 2, name: 'K3+000 - K6+000', health: 68, pci: 70, rqi: 65, issues: 12 },
-    { id: 203, roadId: 2, name: 'K6+000 - K9+000', health: 78, pci: 80, rqi: 75, issues: 5 },
-    { id: 204, roadId: 2, name: 'K9+000 - K12+000', health: 85, pci: 88, rqi: 82, issues: 2 },
-    { id: 205, roadId: 2, name: 'K12+000 - K15+000', health: 80, pci: 82, rqi: 78, issues: 3 },
-    { id: 206, roadId: 2, name: 'K15+000 - K18+200', health: 74, pci: 76, rqi: 70, issues: 6 },
+    // 西兴大桥 (High Risk)
+    { id: 201, roadId: 2, name: '主桥结构', health: 72, pci: 75, rqi: 68, issues: 8 },
+    { id: 202, roadId: 2, name: '索塔', health: 68, pci: 70, rqi: 65, issues: 12 },
+    { id: 203, roadId: 2, name: '拉索', health: 78, pci: 80, rqi: 75, issues: 5 },
+    { id: 204, roadId: 2, name: '桥面铺装', health: 85, pci: 88, rqi: 82, issues: 2 },
+    { id: 205, roadId: 2, name: '支座系统', health: 80, pci: 82, rqi: 78, issues: 3 },
+    { id: 206, roadId: 2, name: '防撞护栏', health: 74, pci: 76, rqi: 70, issues: 6 },
 
-    // 天目山路 (Low Risk)
-    { id: 301, roadId: 3, name: 'K0+000 - K3+000', health: 94, pci: 95, rqi: 93, issues: 0 },
-    { id: 302, roadId: 3, name: 'K3+000 - K6+000', health: 92, pci: 94, rqi: 90, issues: 1 },
-    { id: 303, roadId: 3, name: 'K6+000 - K9+000', health: 90, pci: 92, rqi: 88, issues: 1 },
-    { id: 304, roadId: 3, name: 'K9+000 - K12+000', health: 96, pci: 98, rqi: 94, issues: 0 },
-    { id: 305, roadId: 3, name: 'K12+000 - K15+000', health: 88, pci: 90, rqi: 86, issues: 2 },
+    // 彭埠大桥 (Low Risk)
+    { id: 301, roadId: 3, name: '主通道1', health: 94, pci: 95, rqi: 93, issues: 0 },
+    { id: 302, roadId: 3, name: '主通道2', health: 92, pci: 94, rqi: 90, issues: 1 },
+    { id: 303, roadId: 3, name: '人行通道侧', health: 90, pci: 92, rqi: 88, issues: 1 },
+    { id: 304, roadId: 3, name: '下部结构', health: 96, pci: 98, rqi: 94, issues: 0 },
+    { id: 305, roadId: 3, name: '接线段', health: 88, pci: 90, rqi: 86, issues: 2 },
 
-    // 余杭塘路 (Low Risk)
-    { id: 401, roadId: 4, name: 'K0+000 - K3+000', health: 88, pci: 90, rqi: 86, issues: 1 },
-    { id: 402, roadId: 4, name: 'K3+000 - K6+000', health: 82, pci: 84, rqi: 80, issues: 3 },
-    { id: 403, roadId: 4, name: 'K6+000 - K9+000', health: 86, pci: 88, rqi: 84, issues: 2 },
-    { id: 404, roadId: 4, name: 'K9+000 - K10+800', health: 84, pci: 86, rqi: 82, issues: 2 },
+    // 九堡大桥 (Low Risk)
+    { id: 401, roadId: 4, name: '钢箱梁拱顶', health: 88, pci: 90, rqi: 86, issues: 1 },
+    { id: 402, roadId: 4, name: '悬吊系统', health: 82, pci: 84, rqi: 80, issues: 3 },
+    { id: 403, roadId: 4, name: '桥面系', health: 86, pci: 88, rqi: 84, issues: 2 },
+    { id: 404, roadId: 4, name: '墩柱', health: 84, pci: 86, rqi: 82, issues: 2 },
 
-    // 古墩路 (Medium Risk)
-    { id: 501, roadId: 5, name: 'K0+000 - K3+000', health: 85, pci: 86, rqi: 84, issues: 2 },
-    { id: 502, roadId: 5, name: 'K3+000 - K6+000', health: 78, pci: 80, rqi: 76, issues: 5 },
-    { id: 503, roadId: 5, name: 'K6+000 - K9+000', health: 82, pci: 84, rqi: 80, issues: 3 },
-    { id: 504, roadId: 5, name: 'K9+000 - K12+000', health: 88, pci: 90, rqi: 86, issues: 1 },
-    { id: 505, roadId: 5, name: 'K12+000 - K14+300', health: 76, pci: 78, rqi: 74, issues: 4 },
+    // 下沙大桥 (Medium Risk)
+    { id: 501, roadId: 5, name: '主跨索面', health: 85, pci: 86, rqi: 84, issues: 2 },
+    { id: 502, roadId: 5, name: '塔柱', health: 78, pci: 80, rqi: 76, issues: 5 },
+    { id: 503, roadId: 5, name: '箱梁腹板', health: 82, pci: 84, rqi: 80, issues: 3 },
+    { id: 504, roadId: 5, name: '伸缩缝', health: 88, pci: 90, rqi: 86, issues: 1 },
+    { id: 505, roadId: 5, name: '桥台', health: 76, pci: 78, rqi: 74, issues: 4 },
 ];
 
 // Mock Trend Data
@@ -124,13 +117,13 @@ const RoadRoutesView = ({ onNavigate }) => {
             {/* Header */}
             <div className="flex justify-between items-center mb-2">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-800">路线路段管理</h2>
-                    <p className="text-slate-500 text-sm mt-1">城市道路资产全生命周期管理与健康监测</p>
+                    <h2 className="text-2xl font-bold text-slate-800">桥梁资产台账</h2>
+                    <p className="text-slate-500 text-sm mt-1">城市桥梁群全生命周期管理与健康监测</p>
                 </div>
                 <div className="flex space-x-3">
                     <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm flex items-center">
                         <Navigation size={16} className="mr-2" />
-                        新增路线
+                        新增桥梁资产
                     </button>
                 </div>
             </div>
@@ -143,7 +136,7 @@ const RoadRoutesView = ({ onNavigate }) => {
                             <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
-                                placeholder="搜索路线名称或编号..."
+                                placeholder="搜索桥梁名称或编号..."
                                 className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -181,7 +174,7 @@ const RoadRoutesView = ({ onNavigate }) => {
                                 <div className="flex justify-between items-center text-xs text-slate-500">
                                     <div className="flex items-center">
                                         <MapPin size={12} className="mr-1" />
-                                        {route.start} <ChevronRight size={10} className="mx-1" /> {route.end}
+                                        {route.start} ⇌ {route.end}
                                     </div>
                                     <div className="font-mono">{route.length}</div>
                                 </div>
@@ -196,7 +189,7 @@ const RoadRoutesView = ({ onNavigate }) => {
                     <div className="grid grid-cols-3 gap-4">
                         <Card className={clsx("p-4 flex items-center justify-between text-white border-none shadow-md transition-colors", getHealthBgGradient(selectedRoute.health))}>
                             <div>
-                                <div className="text-white/80 text-xs font-medium mb-1">综合健康指数 (RQI)</div>
+                                <div className="text-white/80 text-xs font-medium mb-1">综合健康状态 (SHM)</div>
                                 <div className="text-3xl font-bold">{selectedRoute.health}</div>
                                 <div className="text-white/80 text-xs mt-1">环比上月 +{Math.abs(selectedRoute.health % 5 / 10)}%</div>
                             </div>
@@ -204,7 +197,7 @@ const RoadRoutesView = ({ onNavigate }) => {
                         </Card>
                         <Card className="p-4 flex items-center justify-between">
                             <div>
-                                <div className="text-slate-500 text-xs font-medium mb-1">路面状况指数 (PCI)</div>
+                                <div className="text-slate-500 text-xs font-medium mb-1">结构健康指数 (BHI)</div>
                                 <div className={clsx("text-3xl font-bold", getHealthColorClass(avgPCI))}>{avgPCI}</div>
                                 <div className={clsx("text-xs mt-1 font-bold", getHealthColorClass(avgPCI))}>{getRatingLabel(avgPCI)}</div>
                             </div>
@@ -284,7 +277,7 @@ const RoadRoutesView = ({ onNavigate }) => {
                                 {/* Center Label */}
                                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none pb-8">
                                     <div className="text-2xl font-bold text-slate-700">16</div>
-                                    <div className="text-xs text-slate-400">总路线</div>
+                                    <div className="text-xs text-slate-400">总桥梁数</div>
                                 </div>
                             </div>
                         </Card>
@@ -295,7 +288,7 @@ const RoadRoutesView = ({ onNavigate }) => {
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-bold text-slate-800 flex items-center">
                                 <Navigation size={20} className="mr-2 text-indigo-500" />
-                                细分路段管理
+                                桥梁附属构件维保
                             </h3>
                             <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">查看GIS地图</button>
                         </div>
@@ -303,9 +296,9 @@ const RoadRoutesView = ({ onNavigate }) => {
                             <table className="w-full text-sm text-left">
                                 <thead className="bg-slate-50 text-slate-500 font-semibold">
                                     <tr>
-                                        <th className="px-4 py-3 rounded-l-lg">路段名称/桩号</th>
-                                        <th className="px-4 py-3">PCI (路面)</th>
-                                        <th className="px-4 py-3">RQI (平整度)</th>
+                                        <th className="px-4 py-3 rounded-l-lg">构件名称/编号</th>
+                                        <th className="px-4 py-3">BHI (结构)</th>
+                                        <th className="px-4 py-3">SHM (综合)</th>
                                         <th className="px-4 py-3">综合评分</th>
                                         <th className="px-4 py-3">评级</th>
                                         <th className="px-4 py-3 rounded-r-lg text-right">操作</th>
@@ -345,7 +338,7 @@ const RoadRoutesView = ({ onNavigate }) => {
                                         </tr>
                                     ))) : (
                                         <tr>
-                                            <td colSpan="6" className="px-4 py-8 text-center text-slate-400 text-sm">暂无细分路段数据</td>
+                                            <td colSpan="6" className="px-4 py-8 text-center text-slate-400 text-sm">暂无附属构件数据</td>
                                         </tr>
                                     )}
                                 </tbody>

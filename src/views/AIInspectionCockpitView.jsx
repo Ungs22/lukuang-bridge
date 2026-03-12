@@ -59,7 +59,7 @@ const AIInspectionCockpitView = ({ onNavigate }) => {
 
         if (!showAIMask) return;
 
-        currentFrame.detections.forEach(det => {
+        currentFrame.diseases?.forEach(det => {
             if (!det.mask_polygon || det.mask_polygon.length < 3) return;
 
             const typeInfo = DISEASE_TYPES.find(t => t.name === det.type);
@@ -74,14 +74,27 @@ const AIInspectionCockpitView = ({ onNavigate }) => {
             });
             ctx.closePath();
 
+            const isSelected = selectedDetection?.id === det.id;
+            const hasSelection = !!selectedDetection;
+            const alpha = isSelected ? '80' : (hasSelection ? '15' : '40');
+            const strokeAlpha = isSelected ? 'FF' : (hasSelection ? '40' : 'FF');
+
             // 填充半透明
-            ctx.fillStyle = color + '40';
+            ctx.fillStyle = color + alpha;
             ctx.fill();
 
             // 描边
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = color + strokeAlpha;
+            ctx.lineWidth = isSelected ? 3 : 2;
             ctx.stroke();
+
+            // 发光效果 (如果选中)
+            if (isSelected) {
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 10;
+                ctx.stroke();
+                ctx.shadowBlur = 0; // reset
+            }
 
             // 标签
             const centerX = det.mask_polygon.reduce((s, p) => s + p[0], 0) / det.mask_polygon.length * canvas.width;
@@ -129,19 +142,19 @@ const AIInspectionCockpitView = ({ onNavigate }) => {
                     <div className="flex items-center space-x-3 text-xs text-slate-400">
                         <div className="flex items-center space-x-1">
                             <Battery size={14} className="text-green-500" />
-                            <span>{currentUav.telemetry.battery}%</span>
+                            <span>{currentUav.battery}%</span>
                         </div>
                         <div className="flex items-center space-x-1">
                             <Signal size={14} className="text-cyan-500" />
-                            <span>{currentUav.telemetry.signal}%</span>
+                            <span>{currentUav.signal?.strength || 100}%</span>
                         </div>
                         <div className="flex items-center space-x-1">
                             <Gauge size={14} />
-                            <span>高度 {currentUav.telemetry.altitude}m</span>
+                            <span>高度 {currentUav.altitude}m</span>
                         </div>
                         <div className="flex items-center space-x-1">
                             <Thermometer size={14} />
-                            <span>{currentUav.telemetry.temperature}°C</span>
+                            <span>{currentUav.temperature}°C</span>
                         </div>
                     </div>
                 </div>
@@ -166,7 +179,7 @@ const AIInspectionCockpitView = ({ onNavigate }) => {
                             </div>
                             {currentFrame && (
                                 <div className="mt-2 text-xs text-slate-400">
-                                    {currentFrame.timestamp} · 构件: {currentFrame.component} · 检出 {currentFrame.detections.length} 个病害
+                                    {currentFrame.time}s · 构件: {currentFrame.diseases?.[0]?.component || '-'} · 检出 {currentFrame.diseases?.length || 0} 个病害
                                 </div>
                             )}
                         </div>
@@ -195,14 +208,14 @@ const AIInspectionCockpitView = ({ onNavigate }) => {
                     </div>
 
                     {/* 当前帧检测结果悬浮 */}
-                    {currentFrame && currentFrame.detections.length > 0 && showAIMask && (
+                    {currentFrame && currentFrame.diseases?.length > 0 && showAIMask && (
                         <div className="absolute top-4 right-4 z-20 bg-slate-900/90 backdrop-blur-md rounded-lg border border-slate-700 p-3 min-w-[220px]">
                             <div className="text-xs font-bold text-cyan-400 mb-2 flex items-center">
                                 <Target size={14} className="mr-1" />
-                                当前帧检测 ({currentFrame.detections.length})
+                                当前帧检测 ({currentFrame.diseases?.length || 0})
                             </div>
                             <div className="space-y-1.5">
-                                {currentFrame.detections.map((det, i) => (
+                                {currentFrame.diseases?.map((det, i) => (
                                     <div key={i}
                                         className="flex items-center justify-between text-xs cursor-pointer hover:bg-slate-800 rounded px-2 py-1 transition-colors"
                                         onClick={() => setSelectedDetection(det)}
@@ -238,14 +251,14 @@ const AIInspectionCockpitView = ({ onNavigate }) => {
 
                     {/* 时间轴 */}
                     <div className="flex-1 flex items-center space-x-3">
-                        <span className="text-xs text-slate-400 w-10 text-right font-mono">{currentFrame?.timestamp || '--:--'}</span>
+                        <span className="text-xs text-slate-400 w-10 text-right font-mono">{currentFrame?.time ? currentFrame.time + 's' : '--:--'}</span>
                         <div className="flex-1 relative">
                             <div className="w-full h-1.5 bg-slate-700 rounded-full">
                                 <div className="h-full bg-cyan-500 rounded-full transition-all" style={{ width: `${allFrames.length > 0 ? (currentFrameIndex / (allFrames.length - 1)) * 100 : 0}%` }}></div>
                             </div>
                             {/* 病害标记 */}
                             {allFrames.map((frame, idx) => (
-                                frame.detections.length > 0 && (
+                                frame.diseases?.length > 0 && (
                                     <div key={idx}
                                         className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-red-500 cursor-pointer hover:scale-150 transition-transform"
                                         style={{ left: `${(idx / (allFrames.length - 1)) * 100}%` }}
@@ -346,7 +359,7 @@ const AIInspectionCockpitView = ({ onNavigate }) => {
                                         onClick={() => {
                                             setSelectedDetection(det);
                                             // 跳转到对应帧
-                                            const frameIdx = allFrames.findIndex(f => f.detections.includes(det));
+                                            const frameIdx = allFrames.findIndex(f => f.diseases?.includes(det));
                                             if (frameIdx >= 0) setCurrentFrameIndex(frameIdx);
                                         }}
                                     >

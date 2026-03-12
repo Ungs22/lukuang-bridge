@@ -1,0 +1,116 @@
+﻿
+> lukuang-saas-proto@0.0.0 build
+> vite build
+
+[36mvite v7.2.7 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m鉁?[39m 2633 modules transformed.
+node.exe : [31m鉁?[39m
+ Build failed in 4.02s
+所在位置 行:1 字符: 1
++ & "C:\Program Files\
+nodejs/node.exe" "C:\P
+rogram Files\nodejs/no
+de_mo ...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: ([31m鉁?[39   
+ m Build failed in    
+ 4.02s:String) []    ,
+ RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+[31merror during buil
+d:
+[31msrc/views/Digital
+CityView.jsx (6:9): "M
+OCK_TASKS" is not expo
+rted by "src/MockData.
+js", imported by "src/
+views/DigitalCityView.
+jsx".[31m
+file: [36mD:/Study/lu
+kuang -bridge/src/view
+s/DigitalCityView.jsx:
+6:9[31m
+[33m
+4: import { Layers, Ca
+r, Zap, Activity, Navi
+gation, Download, Truc
+k, Play, X, Battery, T
+hermometer, Gauge, Map
+Pin, Clock...
+5: import clsx from 'c
+lsx';
+6: import { MOCK_TASKS
+ } from '../MockData';
+            ^
+7: import INITIAL_ROAD
+_PATHS from '../data/c
+achedRoadPaths.json';
+[31m
+    at getRollupError 
+(file:///D:/Study/luku
+ang%20-bridge/node_mod
+ules/rollup/dist/es/sh
+ared/parseAst.js:401:4
+1)
+    at error (file:///
+D:/Study/lukuang%20-br
+idge/node_modules/roll
+up/dist/es/shared/pars
+eAst.js:397:42)
+    at Module.error (f
+ile:///D:/Study/lukuan
+g%20-bridge/node_modul
+es/rollup/dist/es/shar
+ed/node-entry.js:16956
+:16)
+    at Module.traceVar
+iable (file:///D:/Stud
+y/lukuang%20-bridge/no
+de_modules/rollup/dist
+/es/shared/node-entry.
+js:17412:29)
+    at ModuleScope.fin
+dVariable (file:///D:/
+Study/lukuang%20-bridg
+e/node_modules/rollup/
+dist/es/shared/node-en
+try.js:15076:39)
+    at ReturnValueScop
+e.findVariable (file:/
+//D:/Study/lukuang%20-
+bridge/node_modules/ro
+llup/dist/es/shared/no
+de-entry.js:5649:38)
+    at FunctionBodySco
+pe.findVariable (file:
+///D:/Study/lukuang%20
+-bridge/node_modules/r
+ollup/dist/es/shared/n
+ode-entry.js:5649:38)
+    at ReturnValueScop
+e.findVariable (file:/
+//D:/Study/lukuang%20-
+bridge/node_modules/ro
+llup/dist/es/shared/no
+de-entry.js:5649:38)
+    at FunctionBodySco
+pe.findVariable (file:
+///D:/Study/lukuang%20
+-bridge/node_modules/r
+ollup/dist/es/shared/n
+ode-entry.js:5649:38)
+    at MemberExpressio
+n.bind (file:///D:/Stu
+dy/lukuang%20-bridge/n
+ode_modules/rollup/dis
+t/es/shared/node-entry
+.js:7363:49)[39m

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Search, Filter, Plus, Clock,
-    AlertCircle, CheckCircle2, User, FileText, ChevronRight
+    AlertCircle, CheckCircle2, User, FileText, ChevronRight, ChevronDown, Check, Play
 } from 'lucide-react';
 import { MOCK_BRIDGE_WORK_ORDERS } from '../MockData';
 import { Card } from '../components/UIComponents';
@@ -11,34 +11,56 @@ const WorkOrderView = ({ initialTarget = null, sourceType = 'disease' }) => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [orders, setOrders] = useState(MOCK_BRIDGE_WORK_ORDERS);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(!!initialTarget);
+    const [expandedOrderId, setExpandedOrderId] = useState(null);
     const [newOrder, setNewOrder] = useState({
         targetId: '',
         sourceType: 'disease', // 'disease' or 'asset'
         targetName: '',
-        type: '道路维修',
+        type: '桥梁维修',
         priority: 'Medium',
-        assignedTo: '养护一队',
+        assignedTo: '桥检一队',
         deadline: '',
         description: ''
     });
+
+    const toggleExpand = (id) => {
+        if (expandedOrderId === id) {
+            setExpandedOrderId(null);
+        } else {
+            setExpandedOrderId(id);
+        }
+    };
 
     // Reset when initialTarget changes
     useEffect(() => {
         if (initialTarget) {
             setIsCreateModalOpen(true);
             const isAsset = sourceType === 'asset';
-            const targetId = isAsset ? (initialTarget.code || initialTarget.id) : initialTarget.code;
-            const targetName = isAsset ? initialTarget.type : initialTarget.type;
+            const targetId = initialTarget.id || initialTarget.code;
+            
+            let defaultType = '桥梁维修';
+            let desc = '';
+            
+            if (isAsset) {
+                defaultType = '设施维护';
+                desc = `对 ${initialTarget.road || initialTarget.bridgeName || ''} 的 ${initialTarget.type} 进行维护`;
+            } else {
+                if (initialTarget.type === '混凝土裂缝') defaultType = '裂缝注浆';
+                else if (initialTarget.type === '剥落/掉块') defaultType = '局部修补';
+                else if (initialTarget.type === '钢筋裸露') defaultType = '结构加固';
+                else if (initialTarget.type === '钢结构锈蚀') defaultType = '除锈防腐';
+                else if (initialTarget.type === '泛碱/渗水') defaultType = '防水处理';
+                
+                desc = `针对 ${initialTarget.bridgeName || ''} ${initialTarget.component || ''} 的 ${initialTarget.severity || ''} [${initialTarget.type}] 进行维保作业。\nAI 修复建议: ${initialTarget.advice || '暂无详细建议'}`;
+            }
 
             setNewOrder(prev => ({
                 ...prev,
                 targetId: targetId,
                 sourceType: sourceType,
-                targetName: targetName,
-                type: isAsset ? '设施维护' : '道路维修',
-                description: isAsset
-                    ? `对 ${initialTarget.road} ${initialTarget.section} 的 ${initialTarget.type} 进行维护`
-                    : `针对 ${initialTarget.type} (${initialTarget.area}m²) 进行维修`
+                targetName: initialTarget.type,
+                type: defaultType,
+                description: desc
             }));
         }
     }, [initialTarget, sourceType]);
@@ -61,7 +83,7 @@ const WorkOrderView = ({ initialTarget = null, sourceType = 'disease' }) => {
         setOrders([order, ...orders]);
         setIsCreateModalOpen(false);
         // Reset form
-        setNewOrder({ targetId: '', sourceType: 'disease', targetName: '', type: '道路维修', priority: 'Medium', assignedTo: '养护一队', deadline: '', description: '' });
+        setNewOrder({ targetId: '', sourceType: 'disease', targetName: '', type: '桥梁维修', priority: 'Medium', assignedTo: '桥检一队', deadline: '', description: '' });
     };
 
     // Derived state for stats
@@ -113,7 +135,7 @@ const WorkOrderView = ({ initialTarget = null, sourceType = 'disease' }) => {
                 </div>
                 <button
                     onClick={() => {
-                        setNewOrder(prev => ({ ...prev, sourceType: 'disease', type: '道路维修' })); // Default
+                        setNewOrder(prev => ({ ...prev, sourceType: 'disease', type: '桥梁维修' })); // Default
                         setIsCreateModalOpen(true);
                     }}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 active:scale-95 flex items-center font-medium transition-all"
@@ -184,7 +206,10 @@ const WorkOrderView = ({ initialTarget = null, sourceType = 'disease' }) => {
             {/* Order List */}
             <div className="grid gap-4">
                 {filteredOrders.map(order => (
-                    <div key={order.id} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center justify-between gap-4 group">
+                    <div key={order.id} 
+                         className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col group cursor-pointer"
+                         onClick={() => toggleExpand(order.id)}>
+                        <div className="p-5 flex flex-col md:flex-row items-center justify-between gap-4">
 
                         {/* ID & Basic Info */}
                         <div className="flex items-center gap-4 min-w-[250px]">
@@ -235,10 +260,101 @@ const WorkOrderView = ({ initialTarget = null, sourceType = 'disease' }) => {
                         </div>
 
                         {/* Actions */}
-                        <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors">
-                            <ChevronRight />
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); toggleExpand(order.id); }}
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors flex-shrink-0"
+                        >
+                            {expandedOrderId === order.id ? <ChevronDown /> : <ChevronRight />}
                         </button>
                     </div>
+
+                    {/* Expandable Timeline Section */}
+                    {expandedOrderId === order.id && (
+                        <div className="border-t border-slate-100 p-5 bg-slate-50/50 mt-0">
+                            <h4 className="text-sm font-bold text-slate-800 mb-6 flex items-center">
+                                <Clock size={16} className="mr-2 text-blue-500" />
+                                工单处理流转轨迹
+                            </h4>
+                            <div className="relative">
+                                {/* Base Line */}
+                                <div className="absolute left-[15px] top-4 bottom-4 w-0.5 bg-slate-200"></div>
+                                
+                                <div className="space-y-6 relative">
+                                    {/* Step 1 */}
+                                    <div className="flex gap-4">
+                                        <div className="w-8 h-8 rounded-full bg-green-100 border-2 border-white text-green-600 flex items-center justify-center shrink-0 z-10 shadow-sm">
+                                            <Check size={16} strokeWidth={3} />
+                                        </div>
+                                        <div className="pt-1.5 flex-1">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <div className="text-sm font-bold text-slate-800">AI 智能发现异常</div>
+                                                    <div className="text-xs text-slate-500 mt-1">天鹰无人机自动巡检识别，置信度 96%</div>
+                                                </div>
+                                                <div className="text-xs font-mono text-slate-400">03-05 14:12</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Step 2 */}
+                                    <div className="flex gap-4">
+                                        <div className="w-8 h-8 rounded-full bg-green-100 border-2 border-white text-green-600 flex items-center justify-center shrink-0 z-10 shadow-sm">
+                                            <Check size={16} strokeWidth={3} />
+                                        </div>
+                                        <div className="pt-1.5 flex-1">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <div className="text-sm font-bold text-slate-800">登入病害台账</div>
+                                                    <div className="text-xs text-slate-500 mt-1">系统生成标准化病害记录卡，量化评级完成</div>
+                                                </div>
+                                                <div className="text-xs font-mono text-slate-400">03-05 14:15</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Step 3 */}
+                                    <div className="flex gap-4">
+                                        <div className={clsx("w-8 h-8 rounded-full border-2 border-white flex items-center justify-center shrink-0 z-10 shadow-sm animate-pulse", 
+                                            order.status === 'processing' || order.status === 'completed' ? "bg-green-100 text-green-600" :
+                                            order.status === 'pending' ? "bg-orange-100 text-orange-600" : "bg-slate-100 text-slate-400")}>
+                                            {order.status === 'pending' ? <Play size={14} className="ml-0.5" /> : <Check size={16} strokeWidth={3} />}
+                                        </div>
+                                        <div className="pt-1.5 flex-1">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <div className={clsx("text-sm font-bold", order.status === 'pending' ? "text-orange-600" : "text-slate-800")}>派发维保工单</div>
+                                                    <div className="text-xs text-slate-500 mt-1 bg-white border border-slate-200 p-2 rounded inline-block">已指派至: <span className="font-medium text-slate-700">{order.assignedTo}</span>, 要求在 {order.deadline} 前完成</div>
+                                                </div>
+                                                <div className="text-xs font-mono text-slate-400">{order.status === 'pending' ? '当前' : '03-06 09:30'}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Step 4 */}
+                                    <div className="flex gap-4">
+                                        <div className={clsx("w-8 h-8 rounded-full border-2 border-white flex items-center justify-center shrink-0 z-10 shadow-sm", 
+                                            order.status === 'completed' ? "bg-green-100 text-green-600" :
+                                            order.status === 'processing' ? "bg-blue-100 text-blue-600 animate-pulse" : "bg-slate-100 text-slate-300")}>
+                                            {order.status === 'completed' ? <Check size={16} strokeWidth={3} /> : <div className="w-2 h-2 rounded-full bg-current"></div>}
+                                        </div>
+                                        <div className="pt-1.5 flex-1">
+                                            <div className="flex justify-between items-start">
+                                                <div className={clsx(order.status === 'pending' && "opacity-50")}>
+                                                    <div className={clsx("text-sm font-bold", order.status === 'processing' ? "text-blue-600" : "text-slate-800")}>现场修复与验收</div>
+                                                    <div className="text-xs text-slate-500 mt-1">
+                                                        {order.status === 'completed' ? "维修队伍已上传修复后影像材料，并由监理验收合规。" :
+                                                         order.status === 'processing' ? "维修人员已到底签到，正在执行修复作业..." : "等待执行维修任务"}
+                                                    </div>
+                                                </div>
+                                                {order.status === 'completed' && <div className="text-xs font-mono text-slate-400">03-08 11:20</div>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
                 ))}
             </div>
 
@@ -287,9 +403,12 @@ const WorkOrderView = ({ initialTarget = null, sourceType = 'disease' }) => {
                                     >
                                         {newOrder.sourceType === 'disease' ? (
                                             <>
-                                                <option value="道路维修">道路维修</option>
-                                                <option value="坑槽修补">坑槽修补</option>
-                                                <option value="裂缝灌缝">裂缝灌缝</option>
+                                                <option value="桥梁维修">桥梁通用维修</option>
+                                                <option value="裂缝注浆">裂缝注浆</option>
+                                                <option value="局部修补">局部修补</option>
+                                                <option value="结构加固">结构加固</option>
+                                                <option value="除锈防腐">除锈防腐</option>
+                                                <option value="防水处理">防水处理</option>
                                             </>
                                         ) : (
                                             <>
@@ -298,7 +417,7 @@ const WorkOrderView = ({ initialTarget = null, sourceType = 'disease' }) => {
                                                 <option value="清洗保养">清洗保养</option>
                                             </>
                                         )}
-                                        <option value="绿化修剪">绿化修剪</option>
+                                        <option value="专项检测评估">专项检测评估</option>
                                     </select>
                                 </div>
                                 <div>
@@ -321,10 +440,10 @@ const WorkOrderView = ({ initialTarget = null, sourceType = 'disease' }) => {
                                     value={newOrder.assignedTo}
                                     onChange={(e) => setNewOrder({ ...newOrder, assignedTo: e.target.value })}
                                 >
-                                    <option value="养护一队">养护一队</option>
-                                    <option value="养护二队">养护二队</option>
-                                    <option value="绿化组">绿化组</option>
-                                    <option value="设施科">设施科</option>
+                                    <option value="桥检一队">桥检一队</option>
+                                    <option value="结构强化组">结构强化组</option>
+                                    <option value="高空除锈组">高空除锈组</option>
+                                    <option value="水下探模排">水下探模排</option>
                                 </select>
                             </div>
                             <div>

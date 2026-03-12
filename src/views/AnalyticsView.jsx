@@ -3,7 +3,7 @@ import {
     BarChart3, TrendingUp, PieChart as PieIcon, Activity,
     Calendar, Download, RefreshCw, Filter, Check, X,
     MapPin, Truck, AlertTriangle, Clock, ArrowUpRight, ArrowDownRight,
-    Users, Siren, Timer
+    Users, Siren, Timer, Plane
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -42,10 +42,10 @@ const AnalyticsView = () => {
 
     const kpiStats = [
         {
-            label: '巡检覆盖里程',
+            label: '飞行覆盖总里程',
             value: timeRange === 'week' ? '425' : '1,842',
             unit: 'km',
-            icon: Truck,
+            icon: Plane,
             color: 'text-blue-600',
             bg: 'bg-blue-50',
             trend: '+5.2%',
@@ -84,19 +84,19 @@ const AnalyticsView = () => {
             bg: 'bg-purple-50',
             trend: '+1.2%',
             trendUp: false, // Cost up
-            desc: '主要用于路面修补'
+            desc: '主要用于桥梁修缮'
         }
     ];
 
     // Disease Trend Lines
     const diseaseTrendData = [
-        { name: '1日', 裂缝: 12, 坑槽: 5, 护栏: 2 },
-        { name: '5日', 裂缝: 18, 坑槽: 8, 护栏: 1 },
-        { name: '10日', 裂缝: 10, 坑槽: 4, 护栏: 3 },
-        { name: '15日', 裂缝: 25, 坑槽: 10, 护栏: 2 },
-        { name: '20日', 裂缝: 14, 坑槽: 6, 护栏: 4 },
-        { name: '25日', 裂缝: 22, 坑槽: 9, 护栏: 1 },
-        { name: '30日', 裂缝: 16, 坑槽: 7, 护栏: 3 },
+        { name: '1日', 裂缝: 12, 锈蚀: 5, 破损: 2 },
+        { name: '5日', 裂缝: 18, 锈蚀: 8, 破损: 1 },
+        { name: '10日', 裂缝: 10, 锈蚀: 4, 破损: 3 },
+        { name: '15日', 裂缝: 25, 锈蚀: 10, 破损: 2 },
+        { name: '20日', 裂缝: 14, 锈蚀: 6, 破损: 4 },
+        { name: '25日', 裂缝: 22, 锈蚀: 9, 破损: 1 },
+        { name: '30日', 裂缝: 16, 锈蚀: 7, 破损: 3 },
     ];
 
     // Inspection vs Disease Discovery
@@ -125,11 +125,11 @@ const AnalyticsView = () => {
 
     // High Frequency Disease Roads
     const roadRiskData = [
-        { name: '文一西路 (K12-K15)', count: 42, type: '路面裂缝', risk: 'High' },
-        { name: '莫干山路 (K8+200)', count: 35, type: '路面坑槽', risk: 'High' },
-        { name: '天目山路 (K20-K22)', count: 28, type: '护栏损坏', risk: 'Medium' },
-        { name: '余杭塘路 (全段)', count: 22, type: '标线模糊', risk: 'Medium' },
-        { name: '教工路 (K0-K3)', count: 15, type: '井盖破损', risk: 'Low' },
+        { name: '复兴大桥 (主跨)', count: 42, type: '网状裂缝', risk: 'High' },
+        { name: '钱塘江大桥 (南段)', count: 35, type: '露筋/剥落', risk: 'High' },
+        { name: '西兴大桥 (辅拱)', count: 28, type: '钢结构锈蚀', risk: 'Medium' },
+        { name: '之江大桥 (全段)', count: 22, type: '支座偏移', risk: 'Medium' },
+        { name: '九堡大桥 (引桥)', count: 15, type: '伸缩缝破损', risk: 'Low' },
     ];
 
     // Response Time Distribution
@@ -250,8 +250,8 @@ const AnalyticsView = () => {
                                 <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
                                 <Legend />
                                 <Area type="monotone" dataKey="裂缝" stackId="1" stroke="#3b82f6" fill="url(#colorSplit)" />
-                                <Area type="monotone" dataKey="坑槽" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.6} />
-                                <Area type="monotone" dataKey="护栏" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
+                                <Area type="monotone" dataKey="锈蚀" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.6} />
+                                <Area type="monotone" dataKey="破损" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -304,8 +304,8 @@ const AnalyticsView = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                     <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
-                        <Truck size={20} className="mr-2 text-teal-500" />
-                        巡检里程与发现病害数对比
+                        <Plane size={20} className="mr-2 text-teal-500" />
+                        飞行覆盖与发现病害数对比
                     </h3>
                     <div className="h-72 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -316,7 +316,7 @@ const AnalyticsView = () => {
                                 <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} />
                                 <Tooltip />
                                 <Legend />
-                                <Bar yAxisId="left" dataKey="里程" barSize={30} fill="#0ea5e9" radius={[4, 4, 0, 0]} name="巡检里程(km)" />
+                                <Bar yAxisId="left" dataKey="里程" barSize={30} fill="#0ea5e9" radius={[4, 4, 0, 0]} name="飞行覆盖(km)" />
                                 <Line yAxisId="right" type="monotone" dataKey="发现" stroke="#ef4444" strokeWidth={3} name="发现病害(处)" />
                             </ComposedChart>
                         </ResponsiveContainer>
@@ -350,7 +350,7 @@ const AnalyticsView = () => {
                 <Card className="lg:col-span-2">
                     <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center">
                         <Siren size={20} className="mr-2 text-red-500" />
-                        高频病害路段排行 (TOP 5)
+                        高频病害桥梁排行 (TOP 5)
                     </h3>
                     <div className="space-y-4">
                         {roadRiskData.map((road, idx) => (
@@ -448,7 +448,7 @@ const AnalyticsView = () => {
                                 <label className="text-sm font-semibold text-slate-700 block">数据维度</label>
                                 <select className="w-full p-2 border border-slate-300 rounded-md text-sm">
                                     <option>按行政区划</option>
-                                    <option>按道路等级</option>
+                                    <option>按桥梁等级</option>
                                     <option>按养护单位</option>
                                 </select>
                             </div>

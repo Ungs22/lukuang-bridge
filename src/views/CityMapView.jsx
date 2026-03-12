@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import AMapLoader from '@amap/amap-jsapi-loader';
-import { MOCK_BRIDGE_DISEASES, DISEASE_TYPES, MOCK_BRIDGES } from '../MockData';
+import { MOCK_BRIDGE_DISEASES, DISEASE_TYPES, MOCK_BRIDGES, MOCK_UAV_FLEET } from '../MockData';
 import DiseaseDetailModal from '../components/DiseaseDetailModal';
 
 // --- 桥梁病害类型配置 ---
@@ -156,6 +156,54 @@ const CityMapView = ({ defaultMode = 'inspection', onNavigate }) => {
             });
             map.add(bridgeMarker);
             markersRef.current.push(bridgeMarker);
+        });
+
+        // 无人机飞行轨迹与实时位置标注
+        MOCK_UAV_FLEET.forEach(uav => {
+            if (uav.trajectory && uav.trajectory.length > 0) {
+                const path = uav.trajectory.map(p => new AMap.LngLat(p[0], p[1]));
+                const polyline = new AMap.Polyline({
+                    path: path,
+                    isOutline: true,
+                    outlineColor: '#0891b2',
+                    borderWeight: 1,
+                    strokeColor: '#06b6d4', 
+                    strokeOpacity: 0.8,
+                    strokeWeight: 2,
+                    strokeStyle: 'dashed',
+                    lineJoin: 'round',
+                    lineCap: 'round',
+                    zIndex: 40,
+                });
+                map.add(polyline);
+                markersRef.current.push(polyline);
+            }
+            
+            if (uav.position) {
+                const uavContent = document.createElement('div');
+                const root = createRoot(uavContent);
+                root.render(
+                    <div className="relative transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer">
+                        {uav.status === 'flying' && (
+                            <div className="absolute inset-0 rounded-full animate-ping opacity-50 bg-cyan-400"></div>
+                        )}
+                        <div className="relative w-8 h-8 rounded-full flex items-center justify-center bg-slate-900 border border-cyan-500 shadow-lg text-cyan-400">
+                            <Plane size={16} />
+                        </div>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 bg-slate-800 text-cyan-300 text-[10px] rounded shadow border border-cyan-800 whitespace-nowrap opacity-100 font-bold font-sans">
+                            {uav.name} · {uav.currentBridge}
+                        </div>
+                    </div>
+                );
+                const uavMarker = new AMap.Marker({
+                    position: new AMap.LngLat(uav.position[0], uav.position[1]),
+                    content: uavContent,
+                    offset: new AMap.Pixel(0, 0),
+                    zIndex: 50
+                });
+                map.add(uavMarker);
+                markersRef.current.push(uavMarker);
+            }
         });
     };
 
