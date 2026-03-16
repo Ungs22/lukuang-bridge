@@ -9,40 +9,80 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { MOCK_UAV_FLEET, AI_BRIDGE_INSPECTION_DATA, getAllBridgeDetections, DISEASE_TYPES } from '../MockData';
+import rawVideo from '../assets/front Raw.mp4';
+import processedVideo from '../assets/front Proceed.mp4';
 
 // --- AI 桥梁检测工作台 ---
 const AIInspectionCockpitView = ({ onNavigate }) => {
     // --- State ---
     const [selectedUavIndex, setSelectedUavIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [isEnhanced, setIsEnhanced] = useState(false);
     const [showAIMask, setShowAIMask] = useState(true);
     const [selectedDetection, setSelectedDetection] = useState(null);
+
+    const rawVideoRef = useRef(null);
+    const processedVideoRef = useRef(null);
     const canvasRef = useRef(null);
     const containerRef = useRef(null);
+
+    // 获取当前正在播放的视频对象
+    const getActiveVideo = () => isEnhanced ? processedVideoRef.current : rawVideoRef.current;
+    const getInactiveVideo = () => isEnhanced ? rawVideoRef.current : processedVideoRef.current;
 
     const currentUav = MOCK_UAV_FLEET[selectedUavIndex];
     const inspectionData = AI_BRIDGE_INSPECTION_DATA;
     const allFrames = inspectionData.frames || [];
-    const currentFrame = allFrames[currentFrameIndex] || null;
+    // 根据当前视频时间寻找最接近的帧数据
+    const currentFrame = allFrames.find(f => Math.abs(f.time - currentTime) < 0.5) || null;
     const allDetections = getAllBridgeDetections();
 
-    // --- 帧播放控制 ---
+    // --- 视频播放控制 ---
     useEffect(() => {
-        let timer;
-        if (isPlaying && allFrames.length > 0) {
-            timer = setInterval(() => {
-                setCurrentFrameIndex(prev => {
-                    if (prev >= allFrames.length - 1) {
-                        setIsPlaying(false);
-                        return prev;
-                    }
-                    return prev + 1;
-                });
-            }, 2000);
+        const active = getActiveVideo();
+        const inactive = getInactiveVideo();
+        if (!active || !inactive) return;
+
+        if (isPlaying) {
+            active.play().catch(e => console.error("Play error:", e));
+            // 保持静音并跟随
+            inactive.play().catch(e => {});
+        } else {
+            active.pause();
+            inactive.pause();
         }
-        return () => clearInterval(timer);
-    }, [isPlaying, allFrames.length]);
+    }, [isPlaying, isEnhanced]);
+
+    // 处理时间更新
+    const handleTimeUpdate = (e) => {
+        const time = e.target.currentTime;
+        setCurrentTime(time);
+        
+        // 同步后台视频（如果落后太多）
+        const inactive = getInactiveVideo();
+        if (inactive && Math.abs(inactive.currentTime - time) > 0.2) {
+            inactive.currentTime = time;
+        }
+    };
+
+    const handleLoadedMetadata = (e) => {
+        setDuration(e.target.duration);
+    };
+
+    const toggleEnhanced = () => {
+        const active = getActiveVideo();
+        const inactive = getInactiveVideo();
+        if (active && inactive) {
+            // 在状态变更前同步时间
+            inactive.currentTime = active.currentTime;
+            if (isPlaying) {
+                inactive.play();
+            }
+        }
+        setIsEnhanced(!isEnhanced);
+    };
 
     // --- Canvas 绘制掩膜 ---
     useEffect(() => {
@@ -160,51 +200,96 @@ const AIInspectionCockpitView = ({ onNavigate }) => {
                 </div>
 
                 {/* 视频画面区域 */}
-                <div className="flex-1 relative bg-slate-900" ref={containerRef}>
-                    {/* 模拟检测画面 — 用渐变背景模拟桥梁 */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-slate-700 via-slate-600 to-slate-800 flex items-center justify-center">
-                        <div className="text-center">
-                            <div className="w-full max-w-lg mx-auto">
-                                {/* 模拟桥梁构件 */}
-                                <div className="bg-gradient-to-b from-slate-500 to-slate-600 h-48 rounded-lg shadow-inner relative overflow-hidden">
-                                    <div className="absolute inset-2 border border-dashed border-slate-400/30 rounded"></div>
-                                    <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-slate-700/50"></div>
-                                    <div className="absolute top-4 left-4 text-xs text-slate-300/60 font-mono">
-                                        UAV 实时画面 · {inspectionData.bridgeName}
-                                    </div>
-                                    <div className="absolute bottom-4 right-4 text-xs text-slate-300/60 font-mono">
-                                        帧 {currentFrameIndex + 1}/{allFrames.length}
-                                    </div>
-                                </div>
-                            </div>
-                            {currentFrame && (
-                                <div className="mt-2 text-xs text-slate-400">
-                                    {currentFrame.time}s · 构件: {currentFrame.diseases?.[0]?.component || '-'} · 检出 {currentFrame.diseases?.length || 0} 个病害
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                <div className="flex-1 relative bg-black overflow-hidden" ref={containerRef}>
+                    {/* 原始视频 */}
+                    <video
+                        ref={rawVideoRef}
+                        src={rawVideo}
+                        className={clsx(
+                            "absolute inset-0 w-full h-full object-contain transition-opacity duration-300",
+                            isEnhanced ? "opacity-0" : "opacity-100"
+                        )}
+                        onTimeUpdate={handleTimeUpdate}
+                        onLoadedMetadata={handleLoadedMetadata}
+                        playsInline
+                        muted
+                        loop
+                    />
+                    
+                    {/* 算法增强视频 */}
+                    <video
+                        ref={processedVideoRef}
+                        src={processedVideo}
+                        className={clsx(
+                            "absolute inset-0 w-full h-full object-contain transition-opacity duration-300",
+                            isEnhanced ? "opacity-100" : "opacity-0"
+                        )}
+                        playsInline
+                        muted
+                        loop
+                    />
 
                     {/* AI 掩膜 Canvas */}
                     <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-10" />
 
-                    {/* AI 检测状态角标 */}
-                    <div className="absolute top-4 left-4 z-20 flex items-center space-x-2">
-                        <div className={clsx(
-                            "flex items-center space-x-2 px-3 py-1.5 rounded-lg border backdrop-blur-sm text-xs font-bold",
-                            showAIMask
-                                ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-300"
-                                : "bg-slate-800/80 border-slate-700 text-slate-400"
-                        )}>
-                            <Cpu size={14} />
-                            <span>AI {showAIMask ? 'ON' : 'OFF'}</span>
+                    {/* 高级算法切换开关 */}
+                    <div className="absolute top-4 left-4 z-20 flex flex-col space-y-3">
+                        <div className="flex items-center space-x-2">
+                            <button
+                                onClick={toggleEnhanced}
+                                className={clsx(
+                                    "relative h-9 px-4 rounded-full flex items-center space-x-2 transition-all duration-500 border overflow-hidden group",
+                                    isEnhanced 
+                                        ? "bg-cyan-500/20 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.4)]" 
+                                        : "bg-slate-900/80 border-slate-700 hover:border-slate-500"
+                                )}
+                            >
+                                {/* 动态扫描光束特效 */}
+                                {isEnhanced && (
+                                    <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent animate-[scan_2s_linear_infinite]" />
+                                )}
+                                
+                                <Cpu size={16} className={clsx("transition-colors", isEnhanced ? "text-cyan-400" : "text-slate-400")} />
+                                <span className={clsx(
+                                    "text-sm font-bold tracking-wide transition-colors",
+                                    isEnhanced ? "text-cyan-300" : "text-slate-300"
+                                )}>
+                                    {isEnhanced ? "ULTRA AI ENHANCED" : "AI VISION OFF"}
+                                </span>
+                                
+                                <div className={clsx(
+                                    "w-1.5 h-1.5 rounded-full",
+                                    isEnhanced ? "bg-cyan-400 animate-pulse shadow-[0_0_8px_white]" : "bg-slate-600"
+                                )} />
+                            </button>
+
+                            <button
+                                onClick={() => setShowAIMask(!showAIMask)}
+                                title={showAIMask ? "关闭掩膜" : "显示掩膜"}
+                                className={clsx(
+                                    "p-2 rounded-full border transition-all duration-300",
+                                    showAIMask 
+                                        ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-300" 
+                                        : "bg-slate-900/80 border-slate-700 text-slate-500"
+                                )}
+                            >
+                                {showAIMask ? <Eye size={18} /> : <EyeOff size={18} />}
+                            </button>
                         </div>
-                        <button
-                            onClick={() => setShowAIMask(!showAIMask)}
-                            className="p-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-slate-400 hover:text-white transition-colors"
-                        >
-                            {showAIMask ? <Eye size={16} /> : <EyeOff size={16} />}
-                        </button>
+
+                        {/* 状态徽标 */}
+                        <div className="flex items-center space-x-2">
+                            <div className="bg-black/60 backdrop-blur-md px-2 py-1 rounded border border-white/10 flex items-center space-x-2">
+                                <Activity size={12} className="text-green-400" />
+                                <span className="text-[10px] font-mono text-white/70">SYNC: ACTIVE</span>
+                            </div>
+                            {isEnhanced && (
+                                <div className="bg-cyan-500/10 backdrop-blur-md px-2 py-1 rounded border border-cyan-500/30 flex items-center space-x-2 animate-pulse">
+                                    <div className="w-1 h-1 rounded-full bg-cyan-400" />
+                                    <span className="text-[10px] font-bold text-cyan-400 uppercase">Optimizer V2.0</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* 当前帧检测结果悬浮 */}
@@ -235,7 +320,10 @@ const AIInspectionCockpitView = ({ onNavigate }) => {
                 {/* 播放控制栏 */}
                 <div className="h-14 bg-slate-900 border-t border-slate-800 flex items-center px-4 space-x-4">
                     <div className="flex items-center space-x-2">
-                        <button onClick={() => setCurrentFrameIndex(Math.max(0, currentFrameIndex - 1))}
+                        <button onClick={() => {
+                            const v = getActiveVideo();
+                            if (v) v.currentTime = Math.max(0, v.currentTime - 5);
+                        }}
                             className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors">
                             <SkipBack size={16} />
                         </button>
@@ -243,7 +331,10 @@ const AIInspectionCockpitView = ({ onNavigate }) => {
                             className="p-2 rounded-full bg-cyan-600 text-white hover:bg-cyan-500 transition-colors">
                             {isPlaying ? <Pause size={16} /> : <Play size={16} />}
                         </button>
-                        <button onClick={() => setCurrentFrameIndex(Math.min(allFrames.length - 1, currentFrameIndex + 1))}
+                        <button onClick={() => {
+                            const v = getActiveVideo();
+                            if (v) v.currentTime = Math.min(duration, v.currentTime + 5);
+                        }}
                             className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors">
                             <SkipForward size={16} />
                         </button>
@@ -251,24 +342,34 @@ const AIInspectionCockpitView = ({ onNavigate }) => {
 
                     {/* 时间轴 */}
                     <div className="flex-1 flex items-center space-x-3">
-                        <span className="text-xs text-slate-400 w-10 text-right font-mono">{currentFrame?.time ? currentFrame.time + 's' : '--:--'}</span>
-                        <div className="flex-1 relative">
-                            <div className="w-full h-1.5 bg-slate-700 rounded-full">
-                                <div className="h-full bg-cyan-500 rounded-full transition-all" style={{ width: `${allFrames.length > 0 ? (currentFrameIndex / (allFrames.length - 1)) * 100 : 0}%` }}></div>
+                        <span className="text-xs text-slate-400 w-10 text-right font-mono">
+                            {currentTime.toFixed(1)}s
+                        </span>
+                        <div className="flex-1 relative group py-4 cursor-pointer" 
+                             onClick={(e) => {
+                                 const rect = e.currentTarget.getBoundingClientRect();
+                                 const pos = (e.clientX - rect.left) / rect.width;
+                                 const targetTime = pos * duration;
+                                 if (rawVideoRef.current) rawVideoRef.current.currentTime = targetTime;
+                                 if (processedVideoRef.current) processedVideoRef.current.currentTime = targetTime;
+                             }}>
+                            <div className="w-full h-1 bg-slate-700 rounded-full">
+                                <div className="h-full bg-cyan-500 rounded-full relative" style={{ width: `${(currentTime / duration) * 100}%` }}>
+                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
                             </div>
                             {/* 病害标记 */}
                             {allFrames.map((frame, idx) => (
                                 frame.diseases?.length > 0 && (
                                     <div key={idx}
-                                        className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-red-500 cursor-pointer hover:scale-150 transition-transform"
-                                        style={{ left: `${(idx / (allFrames.length - 1)) * 100}%` }}
-                                        onClick={() => setCurrentFrameIndex(idx)}
+                                        className="absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-red-500/60 hover:bg-red-500 transition-colors"
+                                        style={{ left: `${(frame.time / duration) * 100}%` }}
                                     ></div>
                                 )
                             ))}
                         </div>
                         <span className="text-xs text-slate-400 font-mono">
-                            {currentFrameIndex + 1}/{allFrames.length}
+                            {duration.toFixed(1)}s
                         </span>
                     </div>
 
@@ -294,7 +395,11 @@ const AIInspectionCockpitView = ({ onNavigate }) => {
                     <div className="flex space-x-2 overflow-x-auto pb-1">
                         {MOCK_UAV_FLEET.map((uav, idx) => (
                             <button key={uav.id}
-                                onClick={() => { setSelectedUavIndex(idx); setCurrentFrameIndex(0); }}
+                                onClick={() => { 
+                                    setSelectedUavIndex(idx); 
+                                    if(rawVideoRef.current) rawVideoRef.current.currentTime = 0;
+                                    if(processedVideoRef.current) processedVideoRef.current.currentTime = 0;
+                                }}
                                 className={clsx(
                                     "flex-shrink-0 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
                                     idx === selectedUavIndex
@@ -358,9 +463,12 @@ const AIInspectionCockpitView = ({ onNavigate }) => {
                                         )}
                                         onClick={() => {
                                             setSelectedDetection(det);
-                                            // 跳转到对应帧
-                                            const frameIdx = allFrames.findIndex(f => f.diseases?.includes(det));
-                                            if (frameIdx >= 0) setCurrentFrameIndex(frameIdx);
+                                            // 跳转到对应时间点
+                                            const frame = allFrames.find(f => f.diseases?.includes(det));
+                                            if (frame) {
+                                                if(rawVideoRef.current) rawVideoRef.current.currentTime = frame.time;
+                                                if(processedVideoRef.current) processedVideoRef.current.currentTime = frame.time;
+                                            }
                                         }}
                                     >
                                         <div className="flex items-center justify-between mb-2">
