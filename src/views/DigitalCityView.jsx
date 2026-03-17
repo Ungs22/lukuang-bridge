@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import AMapLoader from '@amap/amap-jsapi-loader';
-import { Layers, Car, Zap, Activity, Navigation, Download, Truck, Play, X, Battery, Thermometer, Gauge, MapPin, Clock, AlertTriangle, Video, FileText, ExternalLink, Eye } from 'lucide-react';
+import { Layers, Car, Zap, Activity, Navigation, Download, Truck, Play, X, Battery, Thermometer, Gauge, MapPin, Clock, AlertTriangle, Video, FileText, ExternalLink, Eye, Plane } from 'lucide-react';
 import clsx from 'clsx';
 import { MOCK_TASKS } from '../MockData';
 import INITIAL_ROAD_PATHS from '../data/cachedRoadPaths.json';
@@ -58,6 +58,7 @@ const DigitalCityView = ({ onNavigate }) => {
     const lineLayerRef = useRef(null);
     const labelLayerRef = useRef(null);
     const vehicleMarkersRef = useRef([]);
+    const [loading, setLoading] = useState(true);
     const allLabelDataRef = useRef([]); // 用于存储最新的标签数据引用
     const [roadPaths, setRoadPaths] = useState([]); // 初始为空，由 useEffect 加载
     const [visibleLabels, setVisibleLabels] = useState([]); // 当前视野内的标签
