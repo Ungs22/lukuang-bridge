@@ -1,10 +1,9 @@
 
-import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import AMapLoader from '@amap/amap-jsapi-loader';
 import { Layers, Car, Zap, Activity, Navigation, Download, Truck, Play, X, Battery, Thermometer, Gauge, MapPin, Clock, AlertTriangle, Video, FileText, ExternalLink, Eye, Plane } from 'lucide-react';
 import clsx from 'clsx';
 import { MOCK_TASKS, MOCK_BRIDGES } from '../MockData';
-import INITIAL_ROAD_PATHS from '../data/cachedRoadPaths.json';
 import BridgeDetailPanel from '../components/BridgeDetailPanel';
 
 // --- Configuration ---
@@ -21,8 +20,6 @@ const getHealthColor = (health) => {
     if (health >= 60) return HEALTH_LEVELS['中度'].color;
     return HEALTH_LEVELS['严重'].color;
 };
-
-const LABEL_MIN_ZOOM = 13;
 
 // 模块级别的 AMap 加载缓存
 let amapLoadPromise = null;
@@ -51,71 +48,16 @@ const loadAMap = () => {
 const DigitalCityView = ({ onNavigate }) => {
     const mapContainerRef = useRef(null);
     const mapInstanceRef = useRef(null);
-    const locaRef = useRef(null);
-    const lineLayerRef = useRef(null);
-    const labelLayerRef = useRef(null);
     const vehicleMarkersRef = useRef([]);
     const bridgeMarkersRef = useRef([]);
     const [loading, setLoading] = useState(true);
-    const allLabelDataRef = useRef([]);
-    const [roadPaths, setRoadPaths] = useState([]);
-    const [visibleLabels, setVisibleLabels] = useState([]);
-    const [currentZoom, setCurrentZoom] = useState(13.5);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [selectedBridge, setSelectedBridge] = useState(null);
 
-    // 预处理标签数据
-    const allLabelData = useMemo(() => {
-        if (!roadPaths || roadPaths.length === 0) return [];
-        return roadPaths.map(road => {
-            if (!road.path || road.path.length < 2) return null;
-            const midIndex = Math.floor(road.path.length / 2);
-            const midPoint = road.path[midIndex];
-            return {
-                id: road.id,
-                name: road.name,
-                health: road.health,
-                lng: midPoint[0],
-                lat: midPoint[1],
-                color: getHealthColor(road.health)
-            };
-        }).filter(Boolean);
-    }, [roadPaths]);
-
-    useEffect(() => {
-        allLabelDataRef.current = allLabelData;
-    }, [allLabelData]);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setRoadPaths(INITIAL_ROAD_PATHS);
-        }, 100);
-        return () => clearTimeout(timer);
-    }, []);
-
-    const filterLabelsInBounds = useCallback((map, zoom) => {
-        if (!map) return;
-        if (zoom < LABEL_MIN_ZOOM) {
-            setVisibleLabels([]);
-            return;
-        }
-        const bounds = map.getBounds();
-        if (!bounds) return;
-        const sw = bounds.getSouthWest();
-        const ne = bounds.getNorthEast();
-        const filtered = allLabelDataRef.current.filter(label => {
-            return label.lng >= sw.lng && label.lng <= ne.lng &&
-                label.lat >= sw.lat && label.lat <= ne.lat;
-        });
-        setVisibleLabels(filtered);
-    }, []);
-
     // --- Map Initialization ---
     useEffect(() => {
-        const initId = Date.now();
         let isCurrentInit = true;
         let localMapInstance = null;
-        let localLocaInstance = null;
 
         loadAMap().then((AMap) => {
             if (!isCurrentInit || !AMap || !mapContainerRef.current) return;
@@ -137,66 +79,8 @@ const DigitalCityView = ({ onNavigate }) => {
                 }
 
                 mapInstanceRef.current = localMapInstance;
-
-                // Initialize Loca
-                if (window.Loca && window.Loca.Container) {
-                    try {
-                        localLocaInstance = new window.Loca.Container({ map: localMapInstance });
-                        locaRef.current = localLocaInstance;
-
-                        if (window.Loca.GeoJSONSource) {
-                            const emptySource = new window.Loca.GeoJSONSource({
-                                data: { type: 'FeatureCollection', features: [] }
-                            });
-
-                            if (window.Loca.LineLayer) {
-                                const lineLayer = new window.Loca.LineLayer({
-                                    loca: localLocaInstance,
-                                    zIndex: 10,
-                                    opacity: 1,
-                                    visible: true,
-                                    zooms: [10, 22],
-                                });
-                                lineLayer.setSource(emptySource);
-                                lineLayerRef.current = lineLayer;
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Loca 初始化失败:', e);
-                    }
-                }
-
-                // 标签层
-                try {
-                    const amapLabelsLayer = new AMap.LabelsLayer({
-                        zooms: [LABEL_MIN_ZOOM, 22],
-                        zIndex: 120,
-                        collision: true,
-                        allowCollision: false
-                    });
-                    localMapInstance.add(amapLabelsLayer);
-                    labelLayerRef.current = amapLabelsLayer;
-                } catch (e) {
-                    console.error('标签层初始化失败:', e);
-                }
-
-                // 监听缩放/移动事件
-                localMapInstance.on('zoomend', () => {
-                    if (!isCurrentInit) return;
-                    const zoom = localMapInstance.getZoom();
-                    setCurrentZoom(zoom);
-                    filterLabelsInBounds(localMapInstance, zoom);
-                });
-
-                localMapInstance.on('moveend', () => {
-                    if (!isCurrentInit) return;
-                    const zoom = localMapInstance.getZoom();
-                    filterLabelsInBounds(localMapInstance, zoom);
-                });
-
                 localMapInstance.addControl(new AMap.ControlBar({ position: 'RT' }));
                 setLoading(false);
-                setCurrentZoom(localMapInstance.getZoom());
             });
 
         }).catch(e => {
@@ -205,80 +89,13 @@ const DigitalCityView = ({ onNavigate }) => {
 
         return () => {
             isCurrentInit = false;
-            if (localLocaInstance) {
-                try { localLocaInstance.destroy?.(); } catch (e) { }
-            }
-            locaRef.current = null;
-            lineLayerRef.current = null;
-            labelLayerRef.current = null;
             if (localMapInstance) {
                 try { localMapInstance.destroy(); } catch (e) { }
             }
             mapInstanceRef.current = null;
             setLoading(true);
         };
-    }, [filterLabelsInBounds]);
-
-    // --- Render Road Paths ---
-    useEffect(() => {
-        if (!mapInstanceRef.current || !locaRef.current || !lineLayerRef.current || !window.Loca || loading) return;
-
-        const lineGeojson = {
-            type: 'FeatureCollection',
-            features: roadPaths.map(road => ({
-                type: 'Feature',
-                properties: { id: road.id, name: road.name, health: road.health, status: road.status },
-                geometry: { type: 'LineString', coordinates: road.path }
-            }))
-        };
-
-        const lineLayer = lineLayerRef.current;
-        lineLayer.setSource(new window.Loca.GeoJSONSource({ data: lineGeojson }));
-        lineLayer.setStyle({
-            color: (index, feature) => getHealthColor(feature.properties.health),
-            lineWidth: 3,
-            altitude: 0,
-            borderWidth: 0,
-        });
-    }, [roadPaths, loading]);
-
-    // --- Render Labels ---
-    useEffect(() => {
-        if (!labelLayerRef.current || !mapInstanceRef.current || loading) return;
-        const labelsLayer = labelLayerRef.current;
-        const AMap = window.AMap;
-        labelsLayer.clear();
-        if (visibleLabels.length === 0) return;
-
-        const labelMarkers = visibleLabels.map(label => {
-            return new AMap.LabelMarker({
-                position: [label.lng, label.lat],
-                zooms: [LABEL_MIN_ZOOM, 22],
-                opacity: 1,
-                zIndex: 10,
-                text: {
-                    content: `${label.name} (${label.health})`,
-                    direction: 'center',
-                    offset: [0, 0],
-                    style: {
-                        fontSize: 12,
-                        fontFamily: 'Inter, system-ui, sans-serif',
-                        fontWeight: 'bold',
-                        fillColor: label.color,
-                        strokeColor: '#0f172a',
-                        strokeWidth: 2,
-                        padding: [6, 10],
-                        backgroundColor: 'rgba(15, 23, 42, 0.92)',
-                        borderColor: label.color,
-                        borderWidth: 1,
-                        borderRadius: 4,
-                    }
-                }
-            });
-        });
-
-        labelsLayer.add(labelMarkers);
-    }, [visibleLabels, loading]);
+    }, []);
 
     // --- Render Vehicles ---
     useEffect(() => {
@@ -353,8 +170,14 @@ const DigitalCityView = ({ onNavigate }) => {
                     </div>
                     <div class="w-11 h-11 rounded-full flex items-center justify-center transition-all ${isSelected ? 'scale-125' : ''}" style="background: ${healthColor}25; box-shadow: 0 0 ${isSelected ? '20' : '12'}px ${healthColor}40">
                         <div class="w-8 h-8 rounded-full flex items-center justify-center shadow-lg border-2 transition-all" style="background: ${healthColor}; border-color: ${isSelected ? 'white' : healthColor + '80'}">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="2" y1="18" x2="22" y2="18"/>
+                                <line x1="5" y1="10" x2="5" y2="18"/>
+                                <line x1="19" y1="10" x2="19" y2="18"/>
+                                <path d="M5 10 Q12 4 19 10"/>
+                                <line x1="9" y1="13" x2="9" y2="18"/>
+                                <line x1="12" y1="11" x2="12" y2="18"/>
+                                <line x1="15" y1="13" x2="15" y2="18"/>
                             </svg>
                         </div>
                     </div>
@@ -383,6 +206,9 @@ const DigitalCityView = ({ onNavigate }) => {
         });
     }, [loading, selectedBridge]);
 
+    // 统计数据
+    const alertBridges = MOCK_BRIDGES.filter(b => b.healthScore < 60).length;
+    const executingTasks = MOCK_TASKS.filter(t => t.status === 'executing').length;
 
     return (
         <div className="absolute inset-0 bg-slate-900">
@@ -483,18 +309,18 @@ const DigitalCityView = ({ onNavigate }) => {
                     </div>
                     <div className="w-px h-8 bg-slate-700"></div>
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-green-500/20 rounded-xl text-green-400"><Navigation size={24} /></div>
+                        <div className="p-3 bg-amber-500/20 rounded-xl text-amber-400"><AlertTriangle size={24} /></div>
                         <div>
-                            <div className="text-xl font-bold text-white font-mono">{roadPaths.reduce((acc, r) => acc + (r.path?.length * 0.05), 0).toFixed(1)} km</div>
-                            <div className="text-xs text-slate-400">已巡检全域</div>
+                            <div className="text-xl font-bold text-white font-mono">{alertBridges}</div>
+                            <div className="text-xs text-slate-400">风险预警桥梁</div>
                         </div>
                     </div>
                     <div className="w-px h-8 bg-slate-700"></div>
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-purple-500/20 rounded-xl text-purple-400"><Download size={24} /></div>
+                        <div className="p-3 bg-emerald-500/20 rounded-xl text-emerald-400"><Zap size={24} /></div>
                         <div>
-                            <div className="text-xl font-bold text-white font-mono">{roadPaths.length}</div>
-                            <div className="text-xs text-slate-400">覆盖结构段</div>
+                            <div className="text-xl font-bold text-white font-mono">{executingTasks}</div>
+                            <div className="text-xs text-slate-400">执行中任务</div>
                         </div>
                     </div>
                 </div>
