@@ -8,7 +8,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell, PieChart, Pie
 } from 'recharts';
 import clsx from 'clsx';
-import { DASHBOARD_STATS, MOCK_BRIDGES, MOCK_BRIDGE_DISEASES, MOCK_UAV_FLEET, MOCK_BRIDGE_WORK_ORDERS, MOCK_BRIDGE_INSPECTIONS } from './MockData';
+import { DASHBOARD_STATS, MOCK_BRIDGES, MOCK_BRIDGE_DISEASES, MOCK_UAV_FLEET, MOCK_BRIDGE_WORK_ORDERS, MOCK_BRIDGE_INSPECTIONS, DISEASE_TYPES } from './MockData';
 import { Calendar, Clock, MapPin, Play, CheckCircle2, Plus, FileText, ClipboardList } from 'lucide-react';
 import CityMapView from './views/CityMapView';
 import WorkOrderView from './views/WorkOrderView';
@@ -123,13 +123,10 @@ const DashboardView = ({ onNavigate }) => {
     { name: '16:00', count: 3 }, { name: '18:00', count: 1 }
   ];
 
-  const typeData = [
-    { name: '混凝土裂缝', value: MOCK_BRIDGE_DISEASES.filter(d => d.type === '混凝土裂缝').length },
-    { name: '剥落/掉块', value: MOCK_BRIDGE_DISEASES.filter(d => d.type === '剥落/掉块').length },
-    { name: '钢筋裸露', value: MOCK_BRIDGE_DISEASES.filter(d => d.type === '钢筋裸露').length },
-    { name: '钢结构锈蚀', value: MOCK_BRIDGE_DISEASES.filter(d => d.type === '钢结构锈蚀').length },
-    { name: '泛碱/渗水', value: MOCK_BRIDGE_DISEASES.filter(d => d.type === '泛碱/渗水').length },
-  ];
+  const typeData = DISEASE_TYPES.map(dt => ({
+    name: dt.name,
+    value: MOCK_BRIDGE_DISEASES.filter(d => d.type === dt.name).length,
+  })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
 
   const severityData = [
     { name: '严重', value: MOCK_BRIDGE_DISEASES.filter(d => d.severity === '重度').length },
@@ -344,14 +341,19 @@ const DashboardView = ({ onNavigate }) => {
             桥梁病害类型分布
           </h3>
           <div className="space-y-4 mb-6 flex-1">
-            {typeData.map((item, index) => {
-              const colors = [
+            {typeData.slice(0, 9).map((item, index) => {
+              const colorPalette = [
                 { bg: 'bg-red-500', bgLight: 'bg-red-50', text: 'text-red-600' },
-                { bg: 'bg-orange-500', bgLight: 'bg-orange-50', text: 'text-orange-600' },
                 { bg: 'bg-rose-600', bgLight: 'bg-rose-50', text: 'text-rose-600' },
+                { bg: 'bg-red-800', bgLight: 'bg-red-50', text: 'text-red-800' },
+                { bg: 'bg-orange-500', bgLight: 'bg-orange-50', text: 'text-orange-600' },
+                { bg: 'bg-amber-600', bgLight: 'bg-amber-50', text: 'text-amber-700' },
                 { bg: 'bg-purple-500', bgLight: 'bg-purple-50', text: 'text-purple-600' },
+                { bg: 'bg-yellow-500', bgLight: 'bg-yellow-50', text: 'text-yellow-600' },
+                { bg: 'bg-teal-500', bgLight: 'bg-teal-50', text: 'text-teal-600' },
                 { bg: 'bg-blue-500', bgLight: 'bg-blue-50', text: 'text-blue-600' },
-              ][index % 5];
+              ];
+              const colors = colorPalette[index % colorPalette.length];
               const maxVal = Math.max(...typeData.map(d => d.value)) * 1.25;
               const percent = (item.value / maxVal) * 100;
               return (
@@ -376,7 +378,7 @@ const DashboardView = ({ onNavigate }) => {
             <div className="p-2.5 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-lg border border-cyan-100/50 flex items-start">
               <span className="text-lg mr-2 leading-none">🔍</span>
               <div className="text-xs text-cyan-800 leading-relaxed">
-                <span className="font-bold">AI 分析建议:</span> 混凝土裂缝为当前最高频病害，建议对 <span className="font-medium underline decoration-cyan-300">复兴大桥</span> 桥面板区域安排专项深度巡检。
+                <span className="font-bold">AI 分析建议:</span> {typeData[0]?.name || '裂缝类'}为当前最高频病害，建议对 <span className="font-medium underline decoration-cyan-300">复兴大桥</span> 桥面铺装及主梁区域安排专项深度巡检。
               </div>
             </div>
           </div>
@@ -395,9 +397,9 @@ const DashboardView = ({ onNavigate }) => {
           </div>
           <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1">
             {[
-              { id: 1, title: '复兴大桥 北塔桥面发现重度混凝土裂缝', time: '14:02:30', reporter: '天鹰01号 (UAV-001)', type: 'AI自动识别', level: '严重', status: '待处理' },
-              { id: 2, title: '钱塘江大桥 2#桥墩发现钢筋裸露', time: '13:45:12', reporter: '天鹰02号 (UAV-002)', type: 'AI自动识别', level: '紧急', status: '待处理' },
-              { id: 3, title: '西兴大桥 拉索区域检测到钢结构锈蚀', time: '11:30:00', reporter: '天鹰04号 (UAV-004)', type: 'AI自动识别', level: '一般', status: '已上报' }
+              { id: 1, title: '复兴大桥 北塔桥面发现重度横向裂缝 (D-101)', time: '14:02:30', reporter: '天鹰01号 (UAV-001)', type: 'AI自动识别', level: '严重', status: '待处理' },
+              { id: 2, title: '钱塘江大桥 2#桥墩发现露筋锈蚀 (D-301)', time: '13:45:12', reporter: '天鹰02号 (UAV-002)', type: 'AI自动识别', level: '紧急', status: '待处理' },
+              { id: 3, title: '西兴大桥 3#支座检测到剪切变形 (D-401)', time: '11:30:00', reporter: '天鹰04号 (UAV-004)', type: 'AI自动识别', level: '一般', status: '已上报' }
             ].map(alert => (
               <div key={alert.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 hover:border-cyan-200 transition-all cursor-pointer group shadow-sm"
                 onClick={() => onNavigate('disease-list')}>
@@ -509,7 +511,7 @@ function App() {
       case 'disease-list': return <DiseaseLedgerView onNavigate={navigateTo} />;
       case 'disease-review': return <DiseaseReviewView onNavigate={navigateTo} />;
       case 'bridge-network': return <DigitalCityView onNavigate={navigateTo} />;
-      case 'bridge-assets': return <RoadRoutesView onNavigate={navigateTo} />;
+      case 'bridge-assets': return <RoadRoutesView onNavigate={navigateTo} initialBridgeId={routeState.params?.bridgeId} />;
       case 'maintenance-analytics': return <AnalyticsView onNavigate={navigateTo} />;
       case 'work-orders': {
           const target = routeState.params?.initialTarget || routeState.params?.initialDisease;

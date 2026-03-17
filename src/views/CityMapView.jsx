@@ -11,15 +11,18 @@ import AMapLoader from '@amap/amap-jsapi-loader';
 import { MOCK_BRIDGE_DISEASES, DISEASE_TYPES, MOCK_BRIDGES, MOCK_UAV_FLEET } from '../MockData';
 import DiseaseDetailModal from '../components/DiseaseDetailModal';
 
-// --- 桥梁病害类型配置 ---
-const DISEASE_TYPE_CONFIG = {
-    '混凝土裂缝': { icon: Activity, color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/30' },
-    '剥落/掉块': { icon: AlertTriangle, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/30' },
-    '钢筋裸露': { icon: AlertTriangle, color: 'text-rose-600', bg: 'bg-rose-600/10', border: 'border-rose-600/30' },
-    '钢结构锈蚀': { icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/30' },
-    '泛碱/渗水': { icon: Activity, color: 'text-blue-500', bg: 'bg-blue-500/10', border: 'border-blue-500/30' },
-    'default': { icon: MapPin, color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/30' }
+// --- 桥梁病害类型配置（基于JTG/T H21标准，从DISEASE_TYPES动态生成） ---
+const DISEASE_STYLE_MAP = {
+    '裂缝类':   { icon: Activity,       color: 'text-red-500',    bg: 'bg-red-500/10',    border: 'border-red-500/30' },
+    '表面缺损': { icon: AlertTriangle,   color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/30' },
+    '钢筋病害': { icon: AlertTriangle,   color: 'text-purple-500', bg: 'bg-purple-500/10', border: 'border-purple-500/30' },
+    '附属设施': { icon: Activity,        color: 'text-teal-500',   bg: 'bg-teal-500/10',   border: 'border-teal-500/30' },
+    '耐久性病害': { icon: Activity,      color: 'text-blue-500',   bg: 'bg-blue-500/10',   border: 'border-blue-500/30' },
 };
+const DISEASE_TYPE_CONFIG = Object.fromEntries([
+    ...DISEASE_TYPES.map(dt => [dt.name, DISEASE_STYLE_MAP[dt.category] || { icon: MapPin, color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/30' }]),
+    ['default', { icon: MapPin, color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/30' }]
+]);
 
 const CityMapView = ({ defaultMode = 'inspection', onNavigate }) => {
     const [showPanel, setShowPanel] = useState(true);

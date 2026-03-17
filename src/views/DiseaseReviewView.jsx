@@ -177,11 +177,9 @@ const DiseaseReviewView = ({ onNavigate }) => {
                                             value={editForm.type}
                                             onChange={e => setEditForm({ ...editForm, type: e.target.value })}
                                         >
-                                            <option value="混凝土裂缝">混凝土裂缝</option>
-                                            <option value="剥落/掉块">剥落/掉块</option>
-                                            <option value="钢筋裸露">钢筋裸露</option>
-                                            <option value="钢结构锈蚀">钢结构锈蚀</option>
-                                            <option value="泛碱/渗水">泛碱/渗水</option>
+                                            {DISEASE_TYPES.map(dt => (
+                                                <option key={dt.code} value={dt.name}>{dt.name} ({dt.code})</option>
+                                            ))}
                                         </select>
                                     </div>
                                     <div>

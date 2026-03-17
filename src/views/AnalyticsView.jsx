@@ -125,11 +125,11 @@ const AnalyticsView = () => {
 
     // High Frequency Disease Roads
     const roadRiskData = [
-        { name: '复兴大桥 (主跨)', count: 42, type: '网状裂缝', risk: 'High' },
-        { name: '钱塘江大桥 (南段)', count: 35, type: '露筋/剥落', risk: 'High' },
-        { name: '西兴大桥 (辅拱)', count: 28, type: '钢结构锈蚀', risk: 'Medium' },
-        { name: '之江大桥 (全段)', count: 22, type: '支座偏移', risk: 'Medium' },
-        { name: '九堡大桥 (引桥)', count: 15, type: '伸缩缝破损', risk: 'Low' },
+        { name: '复兴大桥 (主跨)', count: 42, type: '网状裂缝(D-103)', risk: 'High' },
+        { name: '钱塘江大桥 (南段)', count: 35, type: '露筋锈蚀(D-301)', risk: 'High' },
+        { name: '西兴大桥 (辅拱)', count: 28, type: '支座病害(D-401)', risk: 'Medium' },
+        { name: '之江大桥 (全段)', count: 22, type: '渗水泛碱(D-501)', risk: 'Medium' },
+        { name: '九堡大桥 (引桥)', count: 15, type: '伸缩缝损伤(D-402)', risk: 'Low' },
     ];
 
     // Response Time Distribution

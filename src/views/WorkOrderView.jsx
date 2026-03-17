@@ -45,11 +45,13 @@ const WorkOrderView = ({ initialTarget = null, sourceType = 'disease' }) => {
                 defaultType = '设施维护';
                 desc = `对 ${initialTarget.road || initialTarget.bridgeName || ''} 的 ${initialTarget.type} 进行维护`;
             } else {
-                if (initialTarget.type === '混凝土裂缝') defaultType = '裂缝注浆';
-                else if (initialTarget.type === '剥落/掉块') defaultType = '局部修补';
-                else if (initialTarget.type === '钢筋裸露') defaultType = '结构加固';
-                else if (initialTarget.type === '钢结构锈蚀') defaultType = '除锈防腐';
-                else if (initialTarget.type === '泛碱/渗水') defaultType = '防水处理';
+                if (['横向裂缝','纵向裂缝','网状裂缝'].includes(initialTarget.type)) defaultType = '裂缝灌缝修复';
+                else if (initialTarget.type === '混凝土剥落') defaultType = '混凝土修补';
+                else if (initialTarget.type === '蜂窝麻面') defaultType = '局部修补';
+                else if (initialTarget.type === '露筋锈蚀') defaultType = '结构修复加固';
+                else if (initialTarget.type === '支座病害') defaultType = '支座更换';
+                else if (initialTarget.type === '伸缩缝损伤') defaultType = '伸缩缝维修';
+                else if (initialTarget.type === '渗水泛碱') defaultType = '防水修缮';
                 
                 desc = `针对 ${initialTarget.bridgeName || ''} ${initialTarget.component || ''} 的 ${initialTarget.severity || ''} [${initialTarget.type}] 进行维保作业。\nAI 修复建议: ${initialTarget.advice || '暂无详细建议'}`;
             }
@@ -404,11 +406,13 @@ const WorkOrderView = ({ initialTarget = null, sourceType = 'disease' }) => {
                                         {newOrder.sourceType === 'disease' ? (
                                             <>
                                                 <option value="桥梁维修">桥梁通用维修</option>
-                                                <option value="裂缝注浆">裂缝注浆</option>
-                                                <option value="局部修补">局部修补</option>
-                                                <option value="结构加固">结构加固</option>
-                                                <option value="除锈防腐">除锈防腐</option>
-                                                <option value="防水处理">防水处理</option>
+                                                <option value="裂缝灌缝修复">裂缝灌缝修复</option>
+                                                <option value="混凝土修补">混凝土修补</option>
+                                                <option value="局部修补">局部修补(蜂窝麻面)</option>
+                                                <option value="结构修复加固">结构修复加固</option>
+                                                <option value="支座更换">支座更换</option>
+                                                <option value="伸缩缝维修">伸缩缝维修</option>
+                                                <option value="防水修缮">防水修缮</option>
                                             </>
                                         ) : (
                                             <>

@@ -3,7 +3,7 @@ import {
     Search, Filter, RotateCcw, MoreHorizontal, Eye, Settings, Trash2, MapPin, Calendar, Activity
 } from 'lucide-react';
 import clsx from 'clsx';
-import { MOCK_BRIDGE_DISEASES } from '../MockData';
+import { MOCK_BRIDGE_DISEASES, DISEASE_TYPES } from '../MockData';
 import { Card } from '../components/UIComponents';
 import DiseaseDetailModal from '../components/DiseaseDetailModal';
 
@@ -130,11 +130,9 @@ const DiseaseLedgerView = ({ onNavigate }) => {
                         className="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
                     >
                         <option value="all">全部类型</option>
-                        <option value="混凝土裂缝">混凝土裂缝</option>
-                        <option value="剥落/掉块">剥落/掉块</option>
-                        <option value="钢筋裸露">钢筋裸露</option>
-                        <option value="钢结构锈蚀">钢结构锈蚀</option>
-                        <option value="泛碱/渗水">泛碱/渗水</option>
+                        {DISEASE_TYPES.map(dt => (
+                            <option key={dt.code} value={dt.name}>{dt.name}</option>
+                        ))}
                     </select>
                 </div>
                 <div className="space-y-1">
@@ -156,13 +154,16 @@ const DiseaseLedgerView = ({ onNavigate }) => {
                         onChange={(e) => setComponentFilter(e.target.value)}
                         className="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow">
                         <option value="all">全部部位</option>
-                        <option value="桥面板">桥面板</option>
+                        <option value="桥面铺装">桥面铺装</option>
+                        <option value="主梁">主梁</option>
                         <option value="桥墩">桥墩</option>
+                        <option value="桥台">桥台</option>
                         <option value="桥塔">桥塔</option>
-                        <option value="拉索">拉索</option>
-                        <option value="伸缩缝">伸缩缝</option>
+                        <option value="拉索/吊杆">拉索/吊杆</option>
+                        <option value="伸缩缝装置">伸缩缝装置</option>
                         <option value="支座">支座</option>
                         <option value="梁底">梁底</option>
+                        <option value="盖梁">盖梁</option>
                     </select>
                 </div>
                 <div className="space-y-1">
